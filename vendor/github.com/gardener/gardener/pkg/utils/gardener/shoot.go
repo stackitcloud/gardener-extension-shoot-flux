@@ -1,4 +1,4 @@
-// Copyright (c) 2021 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2021 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -379,7 +379,7 @@ func (s *ShootAccessSecret) Reconcile(ctx context.Context, c client.Client) erro
 		// The token-requestor might concurrently update the kubeconfig secret key to populate the token.
 		// Hence, we need to use optimistic locking here to ensure we don't accidentally overwrite the concurrent update.
 		// ref https://github.com/gardener/gardener/issues/6092#issuecomment-1156244514
-		client.MergeFromWithOptimisticLock{})
+		controllerutils.MergeFromOption{MergeFromOption: client.MergeFromWithOptimisticLock{}})
 	return err
 }
 
@@ -587,6 +587,9 @@ func ConstructExternalDomain(ctx context.Context, c client.Reader, shoot *garden
 			}
 			externalDomain.SecretData = secret.Data
 		} else {
+			if shootSecret == nil {
+				return nil, fmt.Errorf("default domain is not present, secret for primary dns provider is required")
+			}
 			externalDomain.SecretData = shootSecret.Data
 		}
 		if primaryProvider.Type != nil {
@@ -611,9 +614,9 @@ func ConstructExternalDomain(ctx context.Context, c client.Reader, shoot *garden
 	return externalDomain, nil
 }
 
-// ComputeRequiredExtensions compute the extension kind/type combinations that are required for the
-// reconciliation flow.
-func ComputeRequiredExtensions(shoot *gardencorev1beta1.Shoot, seed *gardencorev1beta1.Seed, controllerRegistrationList *gardencorev1beta1.ControllerRegistrationList, internalDomain, externalDomain *Domain) utilsets.Set[string] {
+// ComputeRequiredExtensionsForShoot computes the extension kind/type combinations that are required for the
+// shoot reconciliation flow.
+func ComputeRequiredExtensionsForShoot(shoot *gardencorev1beta1.Shoot, seed *gardencorev1beta1.Seed, controllerRegistrationList *gardencorev1beta1.ControllerRegistrationList, internalDomain, externalDomain *Domain) utilsets.Set[string] {
 	requiredExtensions := utilsets.New[string]()
 
 	if seed.Spec.Backup != nil {
@@ -625,10 +628,14 @@ func ComputeRequiredExtensions(shoot *gardencorev1beta1.Shoot, seed *gardencorev
 	// does not reflect this today.
 	requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.ControlPlaneResource, seed.Spec.Provider.Type))
 
-	requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.ControlPlaneResource, shoot.Spec.Provider.Type))
-	requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.InfrastructureResource, shoot.Spec.Provider.Type))
-	requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.NetworkResource, shoot.Spec.Networking.Type))
-	requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.WorkerResource, shoot.Spec.Provider.Type))
+	if !v1beta1helper.IsWorkerless(shoot) {
+		requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.ControlPlaneResource, shoot.Spec.Provider.Type))
+		requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.InfrastructureResource, shoot.Spec.Provider.Type))
+		requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.WorkerResource, shoot.Spec.Provider.Type))
+		if shoot.Spec.Networking != nil && shoot.Spec.Networking.Type != nil {
+			requiredExtensions.Insert(ExtensionsID(extensionsv1alpha1.NetworkResource, *shoot.Spec.Networking.Type))
+		}
+	}
 
 	disabledExtensions := utilsets.New[string]()
 	for _, extension := range shoot.Spec.Extensions {
@@ -673,7 +680,10 @@ func ComputeRequiredExtensions(shoot *gardencorev1beta1.Shoot, seed *gardencorev
 	for _, controllerRegistration := range controllerRegistrationList.Items {
 		for _, resource := range controllerRegistration.Spec.Resources {
 			id := ExtensionsID(extensionsv1alpha1.ExtensionResource, resource.Type)
-			if resource.Kind == extensionsv1alpha1.ExtensionResource && resource.GloballyEnabled != nil && *resource.GloballyEnabled && !disabledExtensions.Has(id) {
+			if resource.Kind == extensionsv1alpha1.ExtensionResource && pointer.BoolDeref(resource.GloballyEnabled, false) && !disabledExtensions.Has(id) {
+				if v1beta1helper.IsWorkerless(shoot) && !pointer.BoolDeref(resource.WorkerlessSupported, false) {
+					continue
+				}
 				requiredExtensions.Insert(id)
 			}
 		}

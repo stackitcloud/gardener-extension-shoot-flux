@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+# Copyright 2020 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -412,7 +412,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
               -v "$CERTS_DIR":/certs \
               $QUIC_CLIENT_IMAGE \
               --server="$loadbalancerIPOrHostName:$quicTunnelPort" \
-              --upstream="172.18.0.1:$webhookServerPort" \
+              --upstream="host.docker.internal:$webhookServerPort" \
               --ca-file=/certs/ca.crt \
               --cert-file=/certs/client.crt \
               --cert-key=/certs/client.key \

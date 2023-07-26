@@ -1,4 +1,4 @@
-// Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,6 +110,17 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	cluster, err := extensionscontroller.GetCluster(ctx, r.client, acc.GetNamespace())
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	// cleanup conditions from extension status
+	if len(r.registeredExtension.conditionTypesToRemove) > 0 {
+		var newConditions []gardencorev1beta1.Condition
+		for _, condition := range extension.GetExtensionStatus().GetConditions() {
+			if !r.registeredExtension.conditionTypesToRemove.Has(condition.Type) {
+				newConditions = append(newConditions, condition)
+			}
+		}
+		extension.GetExtensionStatus().SetConditions(newConditions)
 	}
 
 	if extensionscontroller.IsHibernationEnabled(cluster) {
