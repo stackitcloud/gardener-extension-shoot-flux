@@ -9,17 +9,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/controller/lifecycle"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	"github.com/gardener/gardener/extensions/pkg/util"
-
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	componentbaseconfig "k8s.io/component-base/config"
 	"k8s.io/component-base/version/verflag"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/23technologies/gardener-extension-shoot-flux/pkg/controller/lifecycle"
 )
 
 // NewServiceControllerCommand creates a new command that is used to start the shoot flux controller
