@@ -28,6 +28,7 @@ spec:
       labels:
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-public-networks: allowed
+        networking.resources.gardener.cloud/to-garden-garden-ingress-controller: allowed
         app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
