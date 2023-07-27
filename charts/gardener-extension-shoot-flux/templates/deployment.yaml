@@ -28,6 +28,9 @@ spec:
       labels:
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-public-networks: allowed
+        # This is a hack for making initial skelet able to talk to the garden cluster.
+        # On the initial cluster, we don't talk to the garden cluster via the internet, but we are tricked by kubernetes
+        # into in-cluster communication.
         networking.resources.gardener.cloud/to-garden-garden-ingress-controller: allowed
         app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
         app.kubernetes.io/instance: {{ .Release.Name }}
