@@ -4,10 +4,10 @@
 
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-flux
-REPO 						:= ghcr.io/23technologies
+REPO 						:= reg.infra.ske.eu01.stackit.cloud/stackitcloud
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR                    := $(REPO_ROOT)/hack
-TAG                     := $(shell cat "$(REPO_ROOT)/VERSION")
+TAG                     	:= $(shell git rev-parse --short HEAD)
 LD_FLAGS                    := "-w $(shell $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/VERSION $(EXTENSION_PREFIX)-$(NAME))"
 LEADER_ELECTION             := false
 IGNORE_OPERATION_ANNOTATION := true
@@ -71,7 +71,7 @@ docker-images:
 
 .PHONY: controller-registration
 controller-registration:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh shoot-flux charts/gardener-extension-shoot-flux $(TAG) controller-registartion.yaml Extension:shoot-flux
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh shoot-flux charts/gardener-extension-shoot-flux $(TAG) ./example/controller-registration.yaml Extension:shoot-flux
 
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
@@ -92,10 +92,6 @@ clean:
 	@$(shell find ./example -type f -name "controller-registration.yaml" -exec rm '{}' \;)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/...
 
-.PHONY: check-generate
-check-generate:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh $(REPO_ROOT)
-
 .PHONY: check-docforge
 check-docforge: $(DOCFORGE)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-docforge.sh $(REPO_ROOT) $(REPO_ROOT)/.docforge/manifest.yaml ".docforge/;docs/" "gardener-extension-provider-openstack" false
@@ -104,11 +100,6 @@ check-docforge: $(DOCFORGE)
 check: $(GOIMPORTS) $(GOLANGCI_LINT)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-charts.sh ./charts
-
-.PHONY: generate
-generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(YQ)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/... ./cmd/... ./example/... ./pkg/...
-	$(MAKE) format
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER)
@@ -130,4 +121,4 @@ test-clean:
 verify: check format test
 
 .PHONY: verify-extended
-verify-extended: check-generate check format test-cov test-clean
+verify-extended: check format test-cov test-clean
