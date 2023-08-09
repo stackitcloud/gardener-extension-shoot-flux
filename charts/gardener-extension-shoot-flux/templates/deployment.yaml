@@ -28,6 +28,7 @@ spec:
       labels:
         app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        networking.gardener.cloud/to-runtime-apiserver: allowed
     spec:
       {{- if gt (int .Values.replicaCount) 1 }}
       affinity:
