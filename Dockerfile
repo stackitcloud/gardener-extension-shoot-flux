@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ############# builder
-FROM golang:1.20 AS builder
+FROM golang:1.21 AS builder
 
 ENV BINARY_PATH=/go/bin
 WORKDIR /go/src/github.com/23technologies/gardener-extension-shoot-flux
