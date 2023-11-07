@@ -5,9 +5,9 @@ go 1.21
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/fluxcd/flux2 v0.41.2
-	github.com/fluxcd/kustomize-controller/api v0.35.1
-	github.com/fluxcd/pkg/apis/meta v0.19.1
-	github.com/fluxcd/source-controller/api v0.36.1
+	github.com/fluxcd/kustomize-controller/api v1.1.1
+	github.com/fluxcd/pkg/apis/meta v1.1.2
+	github.com/fluxcd/source-controller/api v1.1.2
 	github.com/gardener/gardener v1.83.0
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-github/v44 v44.1.0
@@ -25,7 +25,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bronze1man/yaml2json v0.0.0-20211227013850-8972abeaea25 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
@@ -41,7 +41,7 @@ require (
 	github.com/fluent/fluent-operator/v2 v2.2.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v1.1.1 // indirect
-	github.com/fluxcd/pkg/ssh v0.7.3 // indirect
+	github.com/fluxcd/pkg/ssh v0.8.2 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gardener/etcd-druid v0.20.1 // indirect
 	github.com/gardener/hvpa-controller/api v0.10.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
