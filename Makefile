@@ -10,18 +10,13 @@ HACK_DIR                    := $(REPO_ROOT)/hack
 TAG                     := $(shell cat "$(REPO_ROOT)/VERSION")
 LD_FLAGS                    := "-w $(shell $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/VERSION $(EXTENSION_PREFIX)-$(NAME))"
 LEADER_ELECTION             := false
-IGNORE_OPERATION_ANNOTATION := true
-KUBECONFIG                  := dev/kubeconfig.yaml
+IGNORE_OPERATION_ANNOTATION := false
 
-WEBHOOK_CONFIG_PORT	:= 8444
-WEBHOOK_CONFIG_URL	:= localhost:${WEBHOOK_CONFIG_PORT}
-EXTENSION_NAMESPACE	:=
+SHELL=/usr/bin/env bash -o pipefail
 
-WEBHOOK_PARAM := --webhook-config-url=${WEBHOOK_CONFIG_URL}
-ifeq (${WEBHOOK_CONFIG_MODE}, service)
-  WEBHOOK_PARAM := --webhook-config-namespace=${EXTENSION_NAMESPACE}
-endif
-
+#########################################
+# Tools                                 #
+#########################################
 
 TOOLS_DIR := hack/tools
 include $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/tools.mk
@@ -35,10 +30,7 @@ start:
 		./cmd/$(EXTENSION_PREFIX)-$(NAME) \
 		--kubeconfig=${KUBECONFIG} \
 		--ignore-operation-annotation=$(IGNORE_OPERATION_ANNOTATION) \
-		--leader-election=$(LEADER_ELECTION) \
-		--webhook-config-server-host=localhost \
-		--webhook-config-server-port=${WEBHOOK_CONFIG_PORT} \
-		--gardener-version="v1.39.0"
+		--leader-election=$(LEADER_ELECTION)
 
 .PHONY: debug
 debug:
@@ -46,10 +38,7 @@ debug:
 		./cmd/$(EXTENSION_PREFIX)-$(NAME) -- \
 		--kubeconfig=${KUBECONFIG} \
 		--ignore-operation-annotation=$(IGNORE_OPERATION_ANNOTATION) \
-		--leader-election=$(LEADER_ELECTION) \
-		--webhook-config-server-host=localhost \
-		--webhook-config-server-port=${WEBHOOK_CONFIG_PORT} \
-		--gardener-version="v1.39.0"
+		--leader-election=$(LEADER_ELECTION)
 
 #################################################################
 # Rules related to binary build, Docker image build and release #
@@ -77,63 +66,49 @@ controller-registration:
 # Rules for verification, formatting, linting, testing and cleaning #
 #####################################################################
 
-.PHONY: install-requirements
-install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@go install -mod=vendor $(REPO_ROOT)/vendor/golang.org/x/tools/cmd/goimports
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install-requirements.sh
-
 .PHONY: revendor
 revendor:
 	@GO111MODULE=on go mod tidy
 	@GO111MODULE=on go mod vendor
 	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
-	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
 	@sed -i "1 s/.*/\#\!\/usr\/bin\/env bash/" $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/get-build-ld-flags.sh
 	@sed -i "1 s/.*/\#\!\/usr\/bin\/env bash/" $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh
-	@sed -i "1 s/.*/\#\!\/usr\/bin\/env bash/" $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/hook-me.sh
-	@sed -i "s/host.docker.internal/172.18.0.1/" $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/hook-me.sh
-
-#	@$(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: clean
 clean:
-	@$(shell find ./example -type f -name "controller-registration.yaml" -exec rm '{}' \;)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/... 
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/...
 
 .PHONY: check-generate
 check-generate:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh $(REPO_ROOT)
 
 .PHONY: check
-check: $(GOIMPORTS)
-	go vet ./...
+check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-charts.sh ./charts
 
 .PHONY: generate
 generate:
-	@GO111MODULE=off hack/update-codegen.sh --parallel
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/... ./cmd/... ./pkg/...
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-sequential.sh ./charts/... ./cmd/... ./pkg/...
 
 .PHONY: format
-format: $(GOIMPORTSREVISER)
+format: $(GOIMPORTS) $(GOIMPORTSREVISER)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/format.sh ./cmd ./pkg
 
 .PHONY: test
 test:
-	@SKIP_FETCH_TOOLS=1 $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test.sh ./cmd/... ./pkg/...
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test.sh ./cmd/... ./pkg/...
 
 .PHONY: test-cov
 test-cov:
-	@SKIP_FETCH_TOOLS=1 $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover.sh ./cmd/... ./pkg/...
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover.sh ./cmd/... ./pkg/...
 
-.PHONY: test-clean
-test-clean:
+.PHONY: test-cov-clean
+test-cov-clean:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover-clean.sh
 
 .PHONY: verify
 verify: check format test
 
 .PHONY: verify-extended
-verify-extended: install-requirements check-generate check format test test-cov test-clean
+verify-extended: check-generate check format test
