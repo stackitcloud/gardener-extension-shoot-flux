@@ -17,5 +17,15 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&FluxConfig{}, func(obj interface{}) { SetObjectDefaults_FluxConfig(obj.(*FluxConfig)) })
 	return nil
+}
+
+func SetObjectDefaults_FluxConfig(in *FluxConfig) {
+	SetDefaults_FluxConfig(in)
+	if in.Flux != nil {
+		SetDefaults_FluxInstallation(in.Flux)
+	}
+	SetDefaults_Source(&in.Source)
+	SetDefaults_Kustomization(&in.Kustomization)
 }

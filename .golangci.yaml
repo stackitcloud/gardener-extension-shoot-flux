@@ -31,6 +31,7 @@ issues:
   - "\".*\" imported but not used"
   # allow non-capitalized messages if they start with technical terms
   - "structured logging message should be capitalized: \"garden(er-apiserver|er-controller-manager|er-admission-controller|er-operator|er-resource-manager|let)"
+  - "exported function SetDefaults_.* should have comment or be unexported"
   exclude-rules:
   - linters:
     - staticcheck

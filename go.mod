@@ -20,6 +20,7 @@ require (
 	k8s.io/client-go v0.28.3
 	k8s.io/code-generator v0.28.3
 	k8s.io/component-base v0.28.3
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.16.3
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -123,7 +124,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/kubelet v0.28.3 // indirect
 	k8s.io/metrics v0.28.3 // indirect
-	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20231015215740-bf15e44028f9 // indirect
 	sigs.k8s.io/controller-tools v0.13.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
