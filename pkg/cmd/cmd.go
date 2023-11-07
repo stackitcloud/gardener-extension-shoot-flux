@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/controller/lifecycle"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/lifecycle"
 )
 
 // NewServiceControllerCommand creates a new command that is used to start the shoot flux controller

@@ -12,7 +12,7 @@ import (
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/cmd"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/cmd"
 )
 
 func main() {

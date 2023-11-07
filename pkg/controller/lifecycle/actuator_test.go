@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/constants"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/constants"
 )
 
 var _ = Describe("Flux", func() {

@@ -13,8 +13,8 @@ import (
 	extensionsheartbeatcontroller "github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	heartbeatcmd "github.com/gardener/gardener/extensions/pkg/controller/heartbeat/cmd"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/controller/healthcheck"
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/controller/lifecycle"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/healthcheck"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/lifecycle"
 )
 
 // ExtensionName is the name of the extension.

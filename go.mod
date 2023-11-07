@@ -1,4 +1,4 @@
-module github.com/23technologies/gardener-extension-shoot-flux
+module github.com/stackitcloud/gardener-extension-shoot-flux
 
 go 1.21
 

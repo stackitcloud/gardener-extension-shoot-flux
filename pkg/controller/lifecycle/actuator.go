@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/constants"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/constants"
 )
 
 const (
