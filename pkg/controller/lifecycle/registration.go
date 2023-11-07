@@ -8,11 +8,11 @@ package lifecycle
 import (
 	"time"
 
-	"github.com/23technologies/gardener-extension-shoot-flux/pkg/constants"
-
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/23technologies/gardener-extension-shoot-flux/pkg/constants"
 )
 
 const (
