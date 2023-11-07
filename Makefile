@@ -9,7 +9,7 @@ REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_
 HACK_DIR                    := $(REPO_ROOT)/hack
 VERSION                     := $(shell git describe --tag --always --dirty)
 TAG							:= $(VERSION)
-LD_FLAGS                    := -w $(shell EFFECTIVE_VERSION=$(VERSION) $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/go.mod $(EXTENSION_PREFIX)-$(NAME))
+LD_FLAGS                    := -w $(shell EFFECTIVE_VERSION=$(VERSION) $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/go.mod $(EXTENSION_PREFIX)-$(NAME) 2>&1 | grep -v .dockerignore)
 LEADER_ELECTION             := false
 IGNORE_OPERATION_ANNOTATION := false
 
