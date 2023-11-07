@@ -103,3 +103,21 @@ verify: check format test
 
 .PHONY: verify-extended
 verify-extended: check-generate check format test
+
+#####################################################################
+# Rules for local environment                                       #
+#####################################################################
+
+# speed-up skaffold deployments by building all images concurrently
+extension-%: export SKAFFOLD_BUILD_CONCURRENCY = 0
+extension-%: export SKAFFOLD_DEFAULT_REPO = localhost:5001
+extension-%: export SKAFFOLD_PUSH = true
+# use static label for skaffold to prevent rolling all gardener components on every `skaffold` invocation
+extension-%: export SKAFFOLD_LABEL = skaffold.dev/run-id=shoot-flux
+
+extension-up: $(SKAFFOLD)
+	$(SKAFFOLD) run
+extension-dev: $(SKAFFOLD)
+	$(SKAFFOLD) dev --cleanup=false --trigger=manual
+extension-down: $(SKAFFOLD)
+	$(SKAFFOLD) delete
