@@ -84,6 +84,7 @@ check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
 generate:
 	@bash $(HACK_DIRECTORY)/generate-controller-registration.sh --pod-security-enforce=privileged shoot-flux charts/gardener-extension-shoot-flux latest deploy/extension/base/controller-registration.yaml Extension:shoot-flux
 	@bash $(HACK_DIRECTORY)/generate-sequential.sh ./cmd/... ./pkg/...
+	hack/update-codegen.sh
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER)
