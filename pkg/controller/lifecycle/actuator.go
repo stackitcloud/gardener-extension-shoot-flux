@@ -181,6 +181,11 @@ func (a *actuator) Delete(ctx context.Context, _ logr.Logger, ex *extensionsv1al
 	return nil
 }
 
+func (a *actuator) ForceDelete(ctx context.Context, _ logr.Logger, _ *extensionsv1alpha1.Extension) error {
+	// TODO: Support ForceDelete
+	return nil
+}
+
 // Restore the Extension resource.
 //
 // PARAMETERS
