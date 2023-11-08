@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/extension"
 )
 
@@ -75,6 +76,10 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {
+		return fmt.Errorf("could not update manager scheme: %s", err)
+	}
+
+	if err := fluxv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
