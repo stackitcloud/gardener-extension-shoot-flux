@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/lifecycle"
+	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/extension"
 )
 
 // NewServiceControllerCommand creates a new command that is used to start the shoot flux controller
@@ -78,8 +78,8 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
-	o.controllerOptions.Completed().Apply(&lifecycle.DefaultAddOptions.ControllerOptions)
-	o.lifecycleOptions.Completed().Apply(&lifecycle.DefaultAddOptions.ControllerOptions)
+	o.controllerOptions.Completed().Apply(&extension.DefaultAddOptions.Controller)
+	o.extensionOptions.Completed().Apply(&extension.DefaultAddOptions.Controller)
 	o.heartbeatOptions.Completed().Apply(&heartbeat.DefaultAddOptions)
 
 	if err := mgr.AddReadyzCheck("informer-sync", gardenerhealthz.NewCacheSyncHealthz(mgr.GetCache())); err != nil {
