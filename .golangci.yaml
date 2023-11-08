@@ -47,6 +47,8 @@ linters-settings:
     - name: exported
   importas:
     alias:
+      - pkg: github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/(\w+)/(v[\w\d]+)
+        alias: $1$2
       # External imported packages
       - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
         alias: $1$2
