@@ -9,12 +9,16 @@ import (
 	"context"
 	"fmt"
 
+	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	componentbaseconfig "k8s.io/component-base/config"
 	"k8s.io/component-base/version/verflag"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,17 +74,20 @@ func (o *Options) run(ctx context.Context) error {
 		},
 	}
 
+	mgrOpts.Scheme = runtime.NewScheme()
+	if err := (&runtime.SchemeBuilder{
+		extensionscontroller.AddToScheme,
+		fluxv1alpha1.AddToScheme,
+		apiextensionsv1.AddToScheme,
+		sourcev1.AddToScheme,
+		kustomizev1.AddToScheme,
+	}).AddToScheme(mgrOpts.Scheme); err != nil {
+		return fmt.Errorf("could not update manager scheme: %s", err)
+	}
+
 	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
 	if err != nil {
 		return fmt.Errorf("could not instantiate controller-manager: %s", err)
-	}
-
-	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {
-		return fmt.Errorf("could not update manager scheme: %s", err)
-	}
-
-	if err := fluxv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
 	o.controllerOptions.Completed().Apply(&extension.DefaultAddOptions.Controller)
