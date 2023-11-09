@@ -15,7 +15,7 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/kubernetes/health"
@@ -136,17 +136,17 @@ func (a *actuator) DecodeProviderConfig(rawExtension *runtime.RawExtension) (*fl
 // IsFluxBootstrapped checks whether Flux was bootstrapped successfully at least once by checking the bootstrapped
 // condition in the Extension status.
 func IsFluxBootstrapped(ext *extensionsv1alpha1.Extension) bool {
-	cond := gardencorev1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped)
+	cond := v1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped)
 	return cond != nil && cond.Status == gardencorev1beta1.ConditionTrue
 }
 
 // SetFluxBootstrapped sets the bootstrapped condition in the Extension status to mark a successful initial bootstrap
 // of Flux. Future reconciliations of the Extension resource will skip reconciliation of the Flux resources.
 func SetFluxBootstrapped(ctx context.Context, c client.Client, ext *extensionsv1alpha1.Extension) error {
-	b, err := gardencorev1beta1helper.NewConditionBuilder(fluxv1alpha1.ConditionBootstrapped)
+	b, err := v1beta1helper.NewConditionBuilder(fluxv1alpha1.ConditionBootstrapped)
 	utilruntime.Must(err)
 
-	if cond := gardencorev1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped); cond != nil {
+	if cond := v1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped); cond != nil {
 		b.WithOldCondition(*cond)
 	}
 
@@ -159,7 +159,7 @@ func SetFluxBootstrapped(ctx context.Context, c client.Client, ext *extensionsv1
 	}
 
 	patch := client.MergeFromWithOptions(ext.DeepCopy(), client.MergeFromWithOptimisticLock{})
-	ext.Status.Conditions = gardencorev1beta1helper.MergeConditions(ext.Status.Conditions, cond)
+	ext.Status.Conditions = v1beta1helper.MergeConditions(ext.Status.Conditions, cond)
 	if err := c.Status().Patch(ctx, ext, patch); err != nil {
 		return fmt.Errorf("error setting %s condition in Extension status: %w", fluxv1alpha1.ConditionBootstrapped, err)
 	}
@@ -255,7 +255,7 @@ func BootstrapSource(
 
 	// Create source secret if specified
 	if secretResourceName := config.Source.SecretResourceName; secretResourceName != nil {
-		resource := gardencorev1beta1helper.GetResourceByName(cluster.Shoot.Spec.Resources, *secretResourceName)
+		resource := v1beta1helper.GetResourceByName(cluster.Shoot.Spec.Resources, *secretResourceName)
 		if resource == nil {
 			return fmt.Errorf("secret resource name does not match any of the resource names in Shoot.spec.resources[].name")
 		}

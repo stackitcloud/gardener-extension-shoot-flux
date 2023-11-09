@@ -17,8 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/constants"
 )
 
 var (
@@ -40,7 +38,7 @@ var (
 func RegisterHealthChecks(ctx context.Context, mgr manager.Manager, opts healthcheck.DefaultAddArgs) error {
 	return healthcheck.DefaultRegistration(
 		ctx,
-		constants.ExtensionType,
+		"shoot-flux",
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
 		func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} },
 		func() extensionsv1alpha1.Object { return &extensionsv1alpha1.Extension{} },
