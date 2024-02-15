@@ -5,8 +5,8 @@ go 1.21
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/fluxcd/flux2/v2 v2.1.2
-	github.com/fluxcd/kustomize-controller/api v1.1.1
-	github.com/fluxcd/pkg/apis/meta v1.1.2
+	github.com/fluxcd/kustomize-controller/api v1.2.2
+	github.com/fluxcd/pkg/apis/meta v1.3.0
 	github.com/fluxcd/source-controller/api v1.1.2
 	github.com/gardener/gardener v1.88.0
 	github.com/go-logr/logr v1.4.1
@@ -38,7 +38,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fluent/fluent-operator/v2 v2.2.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.1.1 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.3.0 // indirect
 	github.com/fluxcd/pkg/kustomize v1.3.4 // indirect
 	github.com/fluxcd/pkg/tar v0.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
