@@ -104,8 +104,8 @@ github.com/fluxcd/kustomize-controller/api v1.1.1 h1:pQcAzvBC3cFGOCgk0zrcsO1Kjta
 github.com/fluxcd/kustomize-controller/api v1.1.1/go.mod h1:FHJTX6c0+CznUNGMol5+Uc4lQsYRxWgpmIRK/xDCghA=
 github.com/fluxcd/pkg/apis/kustomize v1.1.1 h1:MSGn4z0R9PptmoPFHnx2nEZ8Jtl1sKfw0cuDQY2HYwM=
 github.com/fluxcd/pkg/apis/kustomize v1.1.1/go.mod h1:0pCu0ecIY+ZM0iE/hOHYwCMZ3b0SpBrjJ1SH3FFyYdE=
-github.com/fluxcd/pkg/apis/meta v1.1.2 h1:Unjo7hxadtB2dvGpeFqZZUdsjpRA08YYSBb7dF2WIAM=
-github.com/fluxcd/pkg/apis/meta v1.1.2/go.mod h1:BHQyRHCskGMEDf6kDGbgQ+cyiNpUHbLsCOsaMYM2maI=
+github.com/fluxcd/pkg/apis/meta v1.3.0 h1:KxeEc6olmSZvQ5pBONPE4IKxyoWQbqTJF1X6K5nIXpU=
+github.com/fluxcd/pkg/apis/meta v1.3.0/go.mod h1:3Ui8xFkoU4sYehqmscjpq7NjqH2YN1A2iX2okbO3/yA=
 github.com/fluxcd/pkg/kustomize v1.3.4 h1:+XA4umfhkFqrNYQp3ZmKSJy4i3LWjbgoi6H4PllkkkA=
 github.com/fluxcd/pkg/kustomize v1.3.4/go.mod h1:nsbsNGe6nQY6DGYYPowFGQlhxFRcaRFvbwqhCbwAQuE=
 github.com/fluxcd/pkg/tar v0.3.0 h1:gIdCIIuvV5aH193c1qYZeC6gpJOmw1p2OzhAvaUHNFI=
