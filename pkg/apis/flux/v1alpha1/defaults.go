@@ -14,6 +14,10 @@ import (
 const (
 	defaultFluxNamespace     = "flux-system"
 	defaultGitRepositoryName = "flux-system"
+
+	// defaultFluxVersion is maintained by renovate via a customManager. Don't
+	// change this without also updating the renovate config.
+	defaultFluxVersion = "v2.1.2"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -47,9 +51,7 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 
 func SetDefaults_FluxInstallation(obj *FluxInstallation) {
 	if obj.Version == nil {
-		// TODO: add renovate to upgrade this in lockstep with go modules update
-		//  If you do automate this, also automate updating the API doc string ;)
-		obj.Version = ptr.To("v2.1.2")
+		obj.Version = ptr.To(defaultFluxVersion)
 	}
 
 	if obj.Registry == nil {
