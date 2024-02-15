@@ -14,13 +14,13 @@ require (
 	github.com/onsi/gomega v1.31.1
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/tools v0.18.0
-	k8s.io/api v0.28.4
-	k8s.io/apiextensions-apiserver v0.28.4
-	k8s.io/apimachinery v0.28.4
-	k8s.io/code-generator v0.28.4
-	k8s.io/component-base v0.28.4
+	k8s.io/api v0.28.7
+	k8s.io/apiextensions-apiserver v0.28.7
+	k8s.io/apimachinery v0.28.7
+	k8s.io/code-generator v0.28.7
+	k8s.io/component-base v0.28.7
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
-	sigs.k8s.io/controller-runtime v0.16.3
+	sigs.k8s.io/controller-runtime v0.16.4
 )
 
 require (
@@ -125,7 +125,7 @@ require (
 	istio.io/api v1.19.2-0.20231011000955-f3015ebb5bd4 // indirect
 	istio.io/client-go v1.19.3 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0 // indirect
-	k8s.io/client-go v0.28.4 // indirect
+	k8s.io/client-go v0.28.7 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/helm v2.17.0+incompatible // indirect
 	k8s.io/klog v1.0.0 // indirect
