@@ -29,7 +29,6 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.28.3
 	k8s.io/code-generator => k8s.io/code-generator v0.28.3
 	k8s.io/component-base => k8s.io/component-base v0.28.3
-	k8s.io/helm => k8s.io/helm v2.17.0+incompatible
 )
 
 require (
