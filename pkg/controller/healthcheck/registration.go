@@ -36,6 +36,7 @@ var (
 // The controller doesn't actually perform any health checks. However, it removes the health check Conditions written
 // by previous versions of the extension from the Extension status.
 func RegisterHealthChecks(ctx context.Context, mgr manager.Manager, opts healthcheck.DefaultAddArgs) error {
+	// TODO: add real health checks
 	return healthcheck.DefaultRegistration(
 		ctx,
 		"shoot-flux",
