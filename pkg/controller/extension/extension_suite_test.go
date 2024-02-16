@@ -41,6 +41,12 @@ var _ = BeforeSuite(func() {
 	SetDefaultEventuallyPollingInterval(poll)
 })
 
+// testAsync runs f() in a goroutine and returns a channel to wait on. E.g.
+//
+//	done := testAsync(func(){ Expect(true).To(BeTrue()) })
+//	Eventually(done).Should(BeClosed())
+//
+// This is used here, since the functions under test are blocking until resources become ready.
 func testAsync(f func()) chan struct{} {
 	done := make(chan struct{})
 	go func() {
@@ -50,6 +56,7 @@ func testAsync(f func()) chan struct{} {
 	}()
 	return done
 }
+
 func newSeedClient() client.Client {
 	GinkgoHelper()
 	scheme := runtime.NewScheme()
