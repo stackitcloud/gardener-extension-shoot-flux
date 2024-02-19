@@ -87,6 +87,14 @@ var _ = Describe("FluxConfig defaulting", func() {
 			Expect(obj.Source.Template.Spec.SecretRef).NotTo(BeNil())
 			Expect(obj.Source.Template.Spec.SecretRef.Name).To(Equal("flux-secret"))
 		})
+
+		It("should handle if the kustomization is omitted", func() {
+			obj.Kustomization = nil
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Source.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.Template.Namespace).To(Equal("flux-system"))
+		})
 	})
 
 	Describe("Kustomization defaulting", func() {
@@ -96,6 +104,12 @@ var _ = Describe("FluxConfig defaulting", func() {
 			Expect(obj.Kustomization.Template.Name).To(Equal("flux-system"))
 			Expect(obj.Kustomization.Template.Namespace).To(Equal("flux-system"))
 			Expect(obj.Kustomization.Template.Spec.Interval.Duration).To(Equal(time.Minute))
+		})
+		It("should handle if the source is omitted", func() {
+			obj.Source = nil
+			SetObjectDefaults_FluxConfig(obj)
+			Expect(obj.Kustomization.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Kustomization.Template.Namespace).To(Equal("flux-system"))
 		})
 	})
 })

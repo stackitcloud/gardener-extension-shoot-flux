@@ -15,9 +15,11 @@ type FluxConfig struct {
 	// +optional
 	Flux *FluxInstallation `json:"flux,omitempty"`
 	// Source configures how to bootstrap a Flux source object.
+	// If provided, a "Kustomization" must also be provided.
 	// +optional
 	Source *Source `json:"source,omitempty"`
 	// Kustomization configures how to bootstrap a Flux Kustomization object.
+	// If provided, "Source" must also be provided.
 	// +optional
 	Kustomization *Kustomization `json:"kustomization,omitempty"`
 }

@@ -29,7 +29,8 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 		obj.Flux = &FluxInstallation{}
 	}
 
-	// validation ensures that we can only have both Source & Kustomization or neither
+	// validation will ensure that both Source & Kustomization or set or both
+	// are nil, but we have to handle all cases, since defaulting happens first.
 	if obj.Source != nil && obj.Kustomization != nil {
 		if sourceName := obj.Source.Template.Name; obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
 			obj.Kustomization.Template.Spec.SourceRef.Name = sourceName

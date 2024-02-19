@@ -25,7 +25,7 @@ func ValidateFluxConfig(fluxConfig *fluxv1alpha1.FluxConfig, shoot *gardencorev1
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("source"), fluxConfig.Source, "must specify a source if a kustomization is specified"))
 	}
 	if (fluxConfig.Kustomization == nil) && (fluxConfig.Source != nil) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("kustomization"), fluxConfig.Source, "must specify a kustomization if a source is specified"))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("kustomization"), fluxConfig.Kustomization, "must specify a kustomization if a source is specified"))
 	}
 
 	if fluxConfig.Source != nil {
