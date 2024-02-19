@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
@@ -45,10 +44,10 @@ type actuator struct {
 }
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(mgr manager.Manager) extension.Actuator {
+func NewActuator(client client.Client) extension.Actuator {
 	return &actuator{
-		client:  mgr.GetClient(),
-		decoder: serializer.NewCodecFactory(mgr.GetClient().Scheme()).UniversalDecoder(),
+		client:  client,
+		decoder: serializer.NewCodecFactory(client.Scheme()).UniversalDecoder(),
 	}
 }
 
