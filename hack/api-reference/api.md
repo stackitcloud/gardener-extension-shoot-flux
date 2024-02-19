@@ -47,6 +47,7 @@ Source
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Source configures how to bootstrap a Flux source object.</p>
 </td>
 </tr>
@@ -60,6 +61,7 @@ Kustomization
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Kustomization configures how to bootstrap a Flux Kustomization object.</p>
 </td>
 </tr>

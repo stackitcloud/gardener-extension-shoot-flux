@@ -17,7 +17,7 @@ var _ = Describe("FluxConfig defaulting", func() {
 
 	BeforeEach(func() {
 		obj = &FluxConfig{
-			Source: Source{
+			Source: &Source{
 				Template: sourcev1.GitRepository{
 					Spec: sourcev1.GitRepositorySpec{
 						Reference: &sourcev1.GitRepositoryRef{
@@ -27,7 +27,7 @@ var _ = Describe("FluxConfig defaulting", func() {
 					},
 				},
 			},
-			Kustomization: Kustomization{
+			Kustomization: &Kustomization{
 				Template: kustomizev1.Kustomization{
 					Spec: kustomizev1.KustomizationSpec{
 						Path: "clusters/production/flux-system",

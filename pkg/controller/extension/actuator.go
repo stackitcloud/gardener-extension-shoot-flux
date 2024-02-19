@@ -83,12 +83,16 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("error installing Flux: %w", err)
 	}
 
-	if err := BootstrapSource(ctx, log, a.client, shootClient, ext, cluster, &config.Source); err != nil {
-		return fmt.Errorf("error bootstrappping Flux GitRepository: %w", err)
+	if config.Source != nil {
+		if err := BootstrapSource(ctx, log, a.client, shootClient, ext, cluster, config.Source); err != nil {
+			return fmt.Errorf("error bootstrappping Flux GitRepository: %w", err)
+		}
 	}
 
-	if err := BootstrapKustomization(ctx, log, shootClient, &config.Kustomization); err != nil {
-		return fmt.Errorf("error bootstrappping Flux Kustomization: %w", err)
+	if config.Kustomization != nil {
+		if err := BootstrapKustomization(ctx, log, shootClient, config.Kustomization); err != nil {
+			return fmt.Errorf("error bootstrappping Flux Kustomization: %w", err)
+		}
 	}
 
 	if err := SetFluxBootstrapped(ctx, a.client, ext); err != nil {
