@@ -9,6 +9,8 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // FluxConfig specifies how to bootstrap Flux on the shoot cluster.
+// When both "Source" and "Kustomization" are provided they are also installed in the shoot.
+// Otherwise, only Flux itself is installed with no Objects to reconcile.
 type FluxConfig struct {
 	metav1.TypeMeta `json:",inline"`
 	// Flux configures the Flux installation in the Shoot cluster.
