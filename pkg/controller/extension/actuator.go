@@ -68,14 +68,18 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("invalid providerConfig: %w", allErrs.ToAggregate())
 	}
 
-	if IsFluxBootstrapped(ext) {
-		log.V(1).Info("Flux installation has been bootstrapped already, skipping reconciliation of Flux resources")
-		return nil
-	}
-
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating shoot client: %w", err)
+	}
+
+	if err := ReconcileSecrets(ctx, log, shootClient, a.client, ext.Namespace, config, cluster.Shoot.Spec.Resources); err != nil {
+		return fmt.Errorf("error reconciling secrets: %w", err)
+	}
+
+	if IsFluxBootstrapped(ext) {
+		log.V(1).Info("Flux installation has been bootstrapped already, skipping reconciliation of Flux resources")
+		return nil
 	}
 
 	if err := InstallFlux(ctx, log, shootClient, config.Flux); err != nil {
