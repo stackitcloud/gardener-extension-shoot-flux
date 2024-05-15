@@ -29,7 +29,12 @@ type FluxConfig struct {
 	SyncMode SyncMode `json:"syncMode"`
 
 	// AdditionalSecretResourceNames to sync.
-	AdditionalSecretResourceNames []string `json:"additionalSecretResourceNames,omitempty"`
+	AdditionalSecretResources []AdditionalResource `json:"additionalSecretResources,omitempty"`
+}
+
+type AdditionalResource struct {
+	Name            string `json:"name"`
+	TargetNamespace string `json:"targetNamespace,omitempty"`
 }
 
 // SyncMode bla
@@ -40,6 +45,8 @@ const (
 	SyncModeOnce          SyncMode = "Once"
 	SyncModeManifestsOnly SyncMode = "ManifestsOnly"
 )
+
+const TargetNamespaceAnnotationKeyName = "flux.extensions.gardener.cloud/target-namespace"
 
 // FluxInstallation configures the Flux installation in the Shoot cluster.
 type FluxInstallation struct {

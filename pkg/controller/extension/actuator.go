@@ -98,6 +98,12 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		}
 	}
 
+	for _, resource := range config.AdditionalSecretResources {
+		if err := CopySecretToShoot(ctx, log, a.client, shootClient, ext.Namespace, cluster.Shoot.Spec.Resources, resource); err != nil {
+			return fmt.Errorf("failed to copy secret: %w", err)
+		}
+	}
+
 	if err := SetFluxBootstrappedCondition(ctx, a.client, ext); err != nil {
 		return fmt.Errorf("error marking successful boostrapping: %w", err)
 	}
@@ -185,6 +191,49 @@ func SetFluxBootstrappedCondition(ctx context.Context, c client.Client, ext *ext
 	ext.Status.Conditions = v1beta1helper.MergeConditions(ext.Status.Conditions, cond)
 	if err := c.Status().Patch(ctx, ext, patch); err != nil {
 		return fmt.Errorf("error setting %s condition in Extension status: %w", fluxv1alpha1.ConditionBootstrapped, err)
+	}
+
+	return nil
+}
+
+func CopySecretToShoot(ctx context.Context, log logr.Logger, seedClient, shootClient client.Client, extNamespace string, resources []gardencorev1beta1.NamedResourceReference, additionalResource fluxv1alpha1.AdditionalResource) error {
+	resource := v1beta1helper.GetResourceByName(resources, additionalResource.Name)
+	if resource == nil {
+		return fmt.Errorf("secret resource name does not match any of the resource names in Shoot.spec.resources[].name")
+	}
+
+	resourceSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      v1beta1constants.ReferencedResourcesPrefix + resource.ResourceRef.Name,
+			Namespace: extNamespace,
+		},
+	}
+	if err := seedClient.Get(ctx, client.ObjectKeyFromObject(resourceSecret), resourceSecret); err != nil {
+		return fmt.Errorf("error reading referenced secret: %w", err)
+	}
+
+	targetNamespace := "flux-system"
+	if val := resourceSecret.Annotations[fluxv1alpha1.TargetNamespaceAnnotationKeyName]; val != "" {
+		targetNamespace = val
+	}
+	if additionalResource.TargetNamespace != "" {
+		targetNamespace = additionalResource.TargetNamespace
+	}
+	shootSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resource.ResourceRef.Name,
+			Namespace: targetNamespace,
+		},
+	}
+	res, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
+		shootSecret.Data = maps.Clone(resourceSecret.Data)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to ensure secret resource")
+	}
+	if res != controllerutil.OperationResultNone {
+		log.Info("Ensured secret", "secretName", shootSecret.Name, "result", res)
 	}
 
 	return nil
