@@ -24,7 +24,22 @@ type FluxConfig struct {
 	// If provided, "Source" must also be provided.
 	// +optional
 	Kustomization *Kustomization `json:"kustomization,omitempty"`
+
+	// SyncMode can be changed. defaults to Once.
+	SyncMode SyncMode `json:"syncMode"`
+
+	// AdditionalSecretResourceNames to sync.
+	AdditionalSecretResourceNames []string `json:"additionalSecretResourceNames,omitempty"`
 }
+
+// SyncMode bla
+type SyncMode string
+
+// Syncmodes
+const (
+	SyncModeOnce          SyncMode = "Once"
+	SyncModeManifestsOnly SyncMode = "ManifestsOnly"
+)
 
 // FluxInstallation configures the Flux installation in the Shoot cluster.
 type FluxInstallation struct {

@@ -283,7 +283,7 @@ var _ = Describe("Bootstrapped Condition", func() {
 		Expect(IsFluxBootstrapped(ext)).To(BeFalse())
 
 		By("setting the bootstrapped condition")
-		Expect(SetFluxBootstrapped(ctx, seedClient, ext)).To(Succeed())
+		Expect(SetFluxBootstrappedCondition(ctx, seedClient, ext)).To(Succeed())
 
 		By("reading the condition")
 		Expect(seedClient.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())

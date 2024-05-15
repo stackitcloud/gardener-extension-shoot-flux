@@ -66,6 +66,30 @@ Kustomization
 If provided, &ldquo;Source&rdquo; must also be provided.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>syncMode</code></br>
+<em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.SyncMode">
+SyncMode
+</a>
+</em>
+</td>
+<td>
+<p>SyncMode can be changed. defaults to Once.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>additionalSecretResourceNames</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>AdditionalSecretResourceNames to sync.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="flux.extensions.gardener.cloud/v1alpha1.FluxInstallation">FluxInstallation
@@ -214,6 +238,15 @@ The secret data from this resource is used to create the GitRepository&rsquo;s c
 </tr>
 </tbody>
 </table>
+<h3 id="flux.extensions.gardener.cloud/v1alpha1.SyncMode">SyncMode
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+</p>
+<p>
+<p>SyncMode bla</p>
+</p>
 <hr/>
 <p><em>
 Generated with <a href="https://github.com/ahmetb/gen-crd-api-reference-docs">gen-crd-api-reference-docs</a>

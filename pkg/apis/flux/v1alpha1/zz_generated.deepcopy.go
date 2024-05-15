@@ -32,6 +32,11 @@ func (in *FluxConfig) DeepCopyInto(out *FluxConfig) {
 		*out = new(Kustomization)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AdditionalSecretResourceNames != nil {
+		in, out := &in.AdditionalSecretResourceNames, &out.AdditionalSecretResourceNames
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

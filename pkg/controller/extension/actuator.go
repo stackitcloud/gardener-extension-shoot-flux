@@ -68,18 +68,22 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("invalid providerConfig: %w", allErrs.ToAggregate())
 	}
 
-	if IsFluxBootstrapped(ext) {
-		log.V(1).Info("Flux installation has been bootstrapped already, skipping reconciliation of Flux resources")
-		return nil
-	}
-
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating shoot client: %w", err)
 	}
 
-	if err := InstallFlux(ctx, log, shootClient, config.Flux); err != nil {
-		return fmt.Errorf("error installing Flux: %w", err)
+	fluxBootstrapped := IsFluxBootstrapped(ctx, ext, config, shootClient)
+	if config.SyncMode == fluxv1alpha1.SyncModeOnce && fluxBootstrapped {
+		// exit early if "Once" mode is enabled.
+		log.V(1).Info("Flux installation has been bootstrapped already, skipping reconciliation of Flux resources")
+		return nil
+	}
+
+	if !fluxBootstrapped {
+		if err := InstallFlux(ctx, log, shootClient, config.Flux); err != nil {
+			return fmt.Errorf("error installing Flux: %w", err)
+		}
 	}
 
 	if config.Source != nil {
@@ -94,7 +98,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		}
 	}
 
-	if err := SetFluxBootstrapped(ctx, a.client, ext); err != nil {
+	if err := SetFluxBootstrappedCondition(ctx, a.client, ext); err != nil {
 		return fmt.Errorf("error marking successful boostrapping: %w", err)
 	}
 
@@ -139,14 +143,29 @@ func (a *actuator) DecodeProviderConfig(rawExtension *runtime.RawExtension) (*fl
 
 // IsFluxBootstrapped checks whether Flux was bootstrapped successfully at least once by checking the bootstrapped
 // condition in the Extension status.
-func IsFluxBootstrapped(ext *extensionsv1alpha1.Extension) bool {
-	cond := v1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped)
-	return cond != nil && cond.Status == gardencorev1beta1.ConditionTrue
+func IsFluxBootstrapped(ctx context.Context, ext *extensionsv1alpha1.Extension, config *fluxv1alpha1.FluxConfig, shootClient client.Client) bool {
+	switch config.SyncMode {
+	case fluxv1alpha1.SyncModeOnce:
+		cond := v1beta1helper.GetCondition(ext.Status.Conditions, fluxv1alpha1.ConditionBootstrapped)
+		return cond != nil && cond.Status == gardencorev1beta1.ConditionTrue
+	default:
+		// check if the source controller exists, then we can assume a previous reconcile installed flux.
+		sourceController := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "source-controller",
+				Namespace: *config.Flux.Namespace,
+			},
+		}
+		if err := shootClient.Get(ctx, client.ObjectKeyFromObject(sourceController), sourceController); err != nil {
+			return false
+		}
+		return true
+	}
 }
 
-// SetFluxBootstrapped sets the bootstrapped condition in the Extension status to mark a successful initial bootstrap
+// SetFluxBootstrappedCondition sets the bootstrapped condition in the Extension status to mark a successful initial bootstrap
 // of Flux. Future reconciliations of the Extension resource will skip reconciliation of the Flux resources.
-func SetFluxBootstrapped(ctx context.Context, c client.Client, ext *extensionsv1alpha1.Extension) error {
+func SetFluxBootstrappedCondition(ctx context.Context, c client.Client, ext *extensionsv1alpha1.Extension) error {
 	b, err := v1beta1helper.NewConditionBuilder(fluxv1alpha1.ConditionBootstrapped)
 	utilruntime.Must(err)
 
@@ -304,10 +323,16 @@ func bootstrapSource(
 				Name:      config.Template.Spec.SecretRef.Name,
 				Namespace: namespace.Name,
 			},
-			Data: maps.Clone(resourceSecret.Data),
 		}
-		if err := shootClient.Create(ctx, shootSecret); client.IgnoreAlreadyExists(err) != nil {
-			return fmt.Errorf("error creating GitRepository secret: %w", err)
+		res, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
+			shootSecret.Data = maps.Clone(resourceSecret.Data)
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to ensure secret resource")
+		}
+		if res != controllerutil.OperationResultNone {
+			log.Info("Ensured secret", "secretName", shootSecret.Name, "result", res)
 		}
 	}
 

@@ -51,6 +51,10 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 			obj.Kustomization.Template.Spec.SourceRef.Namespace = namespace
 		}
 	}
+
+	if obj.SyncMode == "" {
+		obj.SyncMode = SyncModeOnce
+	}
 }
 
 func SetDefaults_FluxInstallation(obj *FluxInstallation) {
