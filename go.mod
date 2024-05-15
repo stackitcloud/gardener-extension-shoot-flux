@@ -2,7 +2,7 @@ module github.com/stackitcloud/gardener-extension-shoot-flux
 
 go 1.22.0
 
-toolchain go1.22.1
+toolchain go1.22.3
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
