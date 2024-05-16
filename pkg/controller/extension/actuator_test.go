@@ -10,14 +10,11 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	fluxmeta "github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,7 +90,7 @@ var _ = Describe("InstallFlux", func() {
 	It("succesfully apply and wait for readiness", func() {
 		done := testAsync(func() {
 			Expect(
-				installFlux(ctx, log, shootClient, config, tmpDir, poll, timeout),
+				InstallFlux(ctx, log, shootClient, config, tmpDir, poll, timeout),
 			).To(Succeed())
 		})
 		Eventually(fakeFluxReady(ctx, shootClient, *config.Namespace)).Should(Succeed())
@@ -103,7 +100,7 @@ var _ = Describe("InstallFlux", func() {
 	It("should fail if the resources do not get ready", func() {
 		done := testAsync(func() {
 			Expect(
-				installFlux(ctx, log, shootClient, config, tmpDir, poll, timeout),
+				InstallFlux(ctx, log, shootClient, config, tmpDir, poll, timeout),
 			).To(MatchError(ContainSubstring("error waiting for Flux installation to get ready")))
 		})
 
@@ -114,30 +111,27 @@ var _ = Describe("InstallFlux", func() {
 var _ = Describe("BootstrapSource", func() {
 	var (
 		shootClient client.Client
-		seedClient  client.Client
 		config      *fluxv1alpha1.Source
-
-		extNS = "ext-ns"
 	)
 	BeforeEach(func() {
 		shootClient = newShootClient()
-		seedClient = newSeedClient()
 		config = &fluxv1alpha1.Source{
 			Template: sourcev1.GitRepository{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gitrepo",
-					Namespace: "custom-namespace",
+					Namespace: "flux-system",
 				},
 				Spec: sourcev1.GitRepositorySpec{
 					URL: "http://example.com",
 				},
 			},
 		}
+		createNS(shootClient, config.Template.Namespace)
 	})
 	It("should succesfully apply and wait for readiness", func() {
 		done := testAsync(func() {
 			Expect(
-				bootstrapSource(ctx, log, seedClient, shootClient, extNS, nil, config, poll, timeout),
+				ReconcileSource(ctx, log, shootClient, config, poll, timeout),
 			).To(Succeed())
 		})
 		repo := config.Template.DeepCopy()
@@ -147,70 +141,13 @@ var _ = Describe("BootstrapSource", func() {
 		createdRepo := &sourcev1.GitRepository{}
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo))
 		Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
-
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
 	})
 	It("should fail if the resources do not get ready", func() {
 		Eventually(testAsync(func() {
 			Expect(
-				bootstrapSource(ctx, log, seedClient, shootClient, extNS, nil, config, poll, timeout),
+				ReconcileSource(ctx, log, shootClient, config, poll, timeout),
 			).To(MatchError(ContainSubstring("error waiting for GitRepository to get ready")))
 		})).Should(BeClosed())
-	})
-
-	Context("with resource secret", func() {
-		var (
-			secret *corev1.Secret
-			ref    []gardencorev1beta1.NamedResourceReference
-
-			refSecretName    = "referenced-secret"
-			targetSecretName = "target-secret"
-			resourceName     = "the-resource"
-		)
-		BeforeEach(func() {
-			config.Template.Spec.SecretRef = &fluxmeta.LocalObjectReference{
-				Name: targetSecretName,
-			}
-			config.SecretResourceName = &resourceName
-
-			secret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      v1beta1constants.ReferencedResourcesPrefix + refSecretName,
-					Namespace: extNS,
-				},
-				Data: map[string][]byte{
-					"foo": []byte("bar"),
-				},
-			}
-			Expect(seedClient.Create(ctx, secret)).To(Succeed())
-
-			ref = []gardencorev1beta1.NamedResourceReference{
-				{
-					Name: resourceName,
-					ResourceRef: autoscalingv1.CrossVersionObjectReference{
-						Name: refSecretName,
-					},
-				},
-			}
-		})
-		It("should create a referenced resource Secret", func() {
-			done := testAsync(func() {
-				Expect(
-					bootstrapSource(ctx, log, seedClient, shootClient, extNS, ref, config, poll, timeout),
-				).To(Succeed())
-			})
-			repo := config.Template.DeepCopy()
-			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
-			Eventually(done).Should(BeClosed())
-
-			createdSecret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
-				Name:      targetSecretName,
-				Namespace: repo.Namespace,
-			}}
-			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(createdSecret), createdSecret)).To(Succeed())
-			Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("bar")))
-		})
 	})
 })
 
@@ -232,10 +169,11 @@ var _ = Describe("BootstrapKustomization", func() {
 				},
 			},
 		}
+		createNS(shootClient, config.Template.Namespace)
 	})
 	It("should succesfully apply and wait for readiness", func() {
 		done := testAsync(func() {
-			Expect(bootstrapKustomization(ctx, log, shootClient, config, poll, timeout)).To(Succeed())
+			Expect(ReconcileKustomization(ctx, log, shootClient, config, poll, timeout)).To(Succeed())
 		})
 		ks := config.Template.DeepCopy()
 		Eventually(fakeFluxResourceReady(ctx, shootClient, ks)).Should(Succeed())
@@ -244,25 +182,11 @@ var _ = Describe("BootstrapKustomization", func() {
 		createdKS := &kustomizev1.Kustomization{}
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ks), createdKS))
 		Expect(createdKS.Spec.Path).To(Equal("/some/path"))
-
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
-	})
-	It("should handle if the namespace already exists", func() {
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
-		Expect(shootClient.Create(ctx, ns)).To(Succeed())
-
-		done := testAsync(func() {
-			Expect(bootstrapKustomization(ctx, log, shootClient, config, poll, timeout)).To(Succeed())
-		})
-		ks := config.Template.DeepCopy()
-		Eventually(fakeFluxResourceReady(ctx, shootClient, ks)).Should(Succeed())
-		Eventually(done).Should(BeClosed())
 	})
 	It("should fail if the resources do not get ready", func() {
 		Eventually(testAsync(func() {
 			Expect(
-				bootstrapKustomization(ctx, log, shootClient, config, poll, timeout),
+				ReconcileKustomization(ctx, log, shootClient, config, poll, timeout),
 			).To(MatchError(ContainSubstring("error waiting for Kustomization to get ready")))
 		})).Should(BeClosed())
 	})
@@ -277,17 +201,18 @@ var _ = Describe("Bootstrapped Condition", func() {
 				Namespace: "bar",
 			},
 		}
+		shootClient := newShootClient()
 		Expect(seedClient.Create(ctx, ext)).To(Succeed())
 
 		By("being initially false")
-		Expect(IsFluxBootstrapped(ext)).To(BeFalse())
+		Expect(IsFluxBootstrapped(ctx, shootClient, ext.Namespace)).To(BeFalse())
 
 		By("setting the bootstrapped condition")
 		Expect(SetFluxBootstrappedCondition(ctx, seedClient, ext)).To(Succeed())
 
 		By("reading the condition")
 		Expect(seedClient.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
-		Expect(IsFluxBootstrapped(ext)).To(BeTrue())
+		Expect(IsFluxBootstrapped(ctx, shootClient, ext.Namespace)).To(BeTrue())
 	})
 })
 
@@ -402,4 +327,9 @@ func copyFile(src, dst string) error {
 	defer destination.Close()
 	_, err = io.Copy(destination, source)
 	return err
+}
+
+func createNS(kube client.Client, name string) {
+	GinkgoHelper()
+	Expect(kube.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}})).To(Succeed())
 }

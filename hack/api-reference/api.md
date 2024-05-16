@@ -14,6 +14,7 @@ Resource Types:
 <a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
 </p>
 <p>
+<p>AdditionalResource to sync to the shoot.</p>
 </p>
 <table>
 <thead>
@@ -31,16 +32,19 @@ string
 </em>
 </td>
 <td>
+<p>Name references a resource under Shoot.spec.resources.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>targetNamespace</code></br>
+<code>targetName</code></br>
 <em>
 string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>TargetName optionally overwrites the name of the secret in the shoot.</p>
 </td>
 </tr>
 </tbody>
@@ -114,7 +118,11 @@ SyncMode
 </em>
 </td>
 <td>
-<p>SyncMode can be changed. defaults to Once.</p>
+<p>SyncMode of the Flux installation. Possible values are:
+- Once: Installs Flux and the provided manifests only once, afterwards the extension never looks into the Shoot or updates the extension.
+- ManifestsOnly: Installs Flux once, and updates the manifests if they have changed.
+For this to work without conflicts, you need to make sure the extension and flux agree on the desired state.</p>
+<p>Defaults to Once. +optional</p>
 </td>
 </tr>
 <tr>
@@ -127,7 +135,7 @@ SyncMode
 </em>
 </td>
 <td>
-<p>AdditionalSecretResourceNames to sync.</p>
+<p>AdditionalSecretResourceNames to sync to the shoot.</p>
 </td>
 </tr>
 </tbody>
@@ -221,8 +229,8 @@ kustomize.toolkit.fluxcd.io/v1.Kustomization
 Required fields: spec.path.
 The following defaults are applied to omitted field:
 - metadata.name is defaulted to &ldquo;flux-system&rdquo;
-- metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
-- spec.interval is defaulted to &ldquo;1m&rdquo;</p>
+- spec.interval is defaulted to &ldquo;1m&rdquo;
+metadata.namespace is always set to the fluxInstallation namespace</p>
 </td>
 </tr>
 </tbody>
@@ -258,8 +266,8 @@ source.toolkit.fluxcd.io/v1.GitRepository
 Required fields: spec.ref.*, spec.url.
 The following defaults are applied to omitted field:
 - metadata.name is defaulted to &ldquo;flux-system&rdquo;
-- metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
-- spec.interval is defaulted to &ldquo;1m&rdquo;</p>
+- spec.interval is defaulted to &ldquo;1m&rdquo;
+metadata.namespace is always set to the fluxInstallation namespace</p>
 </td>
 </tr>
 <tr>
@@ -285,7 +293,7 @@ The secret data from this resource is used to create the GitRepository&rsquo;s c
 <a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
 </p>
 <p>
-<p>SyncMode bla</p>
+<p>SyncMode defines how Flux is reconciled.</p>
 </p>
 <hr/>
 <p><em>

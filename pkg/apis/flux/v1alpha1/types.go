@@ -25,28 +25,36 @@ type FluxConfig struct {
 	// +optional
 	Kustomization *Kustomization `json:"kustomization,omitempty"`
 
-	// SyncMode can be changed. defaults to Once.
-	SyncMode SyncMode `json:"syncMode"`
+	// SyncMode of the Flux installation. Possible values are:
+	//  - Once: Installs Flux and the provided manifests only once, afterwards the extension never looks into the Shoot or updates the extension.
+	//  - ManifestsOnly: Installs Flux once, and updates the manifests if they have changed.
+	//    For this to work without conflicts, you need to make sure the extension and flux agree on the desired state.
+	//
+	// Defaults to Once. +optional
+	SyncMode SyncMode `json:"syncMode,omitempty"`
 
-	// AdditionalSecretResourceNames to sync.
+	// AdditionalSecretResourceNames to sync to the shoot.
 	AdditionalSecretResources []AdditionalResource `json:"additionalSecretResources,omitempty"`
 }
 
+// AdditionalResource to sync to the shoot.
 type AdditionalResource struct {
-	Name            string `json:"name"`
-	TargetNamespace string `json:"targetNamespace,omitempty"`
+	// Name references a resource under Shoot.spec.resources.
+	Name string `json:"name"`
+	// TargetName optionally overwrites the name of the secret in the shoot.
+	// +optional
+	TargetName *string `json:"targetName,omitempty"`
 }
 
-// SyncMode bla
+// SyncMode defines how Flux is reconciled.
 type SyncMode string
 
-// Syncmodes
 const (
-	SyncModeOnce          SyncMode = "Once"
+	// SyncModeOnce only syncs the resources once.
+	SyncModeOnce SyncMode = "Once"
+	// SyncModeManifestsOnly installs flux once, then only keeps the source and kustomization in sync.
 	SyncModeManifestsOnly SyncMode = "ManifestsOnly"
 )
-
-const TargetNamespaceAnnotationKeyName = "flux.extensions.gardener.cloud/target-namespace"
 
 // FluxInstallation configures the Flux installation in the Shoot cluster.
 type FluxInstallation struct {
@@ -73,8 +81,8 @@ type Source struct {
 	// Required fields: spec.ref.*, spec.url.
 	// The following defaults are applied to omitted field:
 	// - metadata.name is defaulted to "flux-system"
-	// - metadata.namespace is defaulted to "flux-system"
 	// - spec.interval is defaulted to "1m"
+	// metadata.namespace is always set to the fluxInstallation namespace
 	Template sourcev1.GitRepository `json:"template"`
 	// SecretResourceName references a resource under Shoot.spec.resources.
 	// The secret data from this resource is used to create the GitRepository's credentials secret
@@ -89,7 +97,7 @@ type Kustomization struct {
 	// Required fields: spec.path.
 	// The following defaults are applied to omitted field:
 	// - metadata.name is defaulted to "flux-system"
-	// - metadata.namespace is defaulted to "flux-system"
 	// - spec.interval is defaulted to "1m"
+	// metadata.namespace is always set to the fluxInstallation namespace
 	Template kustomizev1.Kustomization `json:"template"`
 }
