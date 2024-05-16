@@ -12,6 +12,10 @@ spec:
     providerConfig:
       apiVersion: flux.extensions.gardener.cloud/v1alpha1
       kind: FluxConfig
+      # syncMode: Once
+      # additionalSecretResources:
+      #   - name: another-secret
+      #     targetName: optional-rename
       flux:
         # renovate:flux-version
         version: v2.2.3
