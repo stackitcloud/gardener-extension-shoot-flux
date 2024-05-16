@@ -12,7 +12,7 @@ DEFAULTER_GEN              := $(TOOLS_BIN_DIR)/defaulter-gen
 
 # default tool versions
 KO_VERSION ?= v0.15.0
-CODE_GENERATOR_VERSION ?= v0.29.3
+CODE_GENERATOR_VERSION ?= v0.29.4
 
 #########################################
 # Tools                                 #
