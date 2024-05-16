@@ -7,9 +7,6 @@ set -o pipefail
 BASE_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 export TERM="xterm-256color"
 
-DEEPCOPY_GEN="$DEEPCOPY_GEN"
-DEFAULTER_GEN="$DEFAULTER_GEN"
-
 bold="$(tput bold)"
 blue="$(tput setaf 4)"
 normal="$(tput sgr0)"
@@ -62,13 +59,13 @@ echo "Generating flux API group"
 echo "${bold}Public types${normal}"
 
 echo "Generating ${blue}deepcopy${normal}"
-"$DEEPCOPY_GEN" \
+deepcopy-gen \
   --go-header-file "$BASE_DIR/boilerplate.go.txt" \
   --input-dirs "$(qualify-gvs "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis" "flux:v1alpha1")" \
   -O zz_generated.deepcopy
 
 echo "Generating ${blue}defaulter${normal}"
-"$DEFAULTER_GEN" \
+defaulter-gen \
   --go-header-file "$BASE_DIR/boilerplate.go.txt" \
   --input-dirs "$(qualify-gvs "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis" "flux:v1alpha1")" \
   -O zz_generated.defaults
