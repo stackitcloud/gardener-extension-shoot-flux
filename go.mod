@@ -2,7 +2,12 @@ module github.com/stackitcloud/gardener-extension-shoot-flux
 
 go 1.22.3
 
-replace k8s.io/code-generator => k8s.io/code-generator v0.29.7
+replace (
+	// these replaces are needed, because gardener is on older k8s/controller-runtime packages
+	k8s.io/client-go => k8s.io/client-go v0.29.7
+	k8s.io/code-generator => k8s.io/code-generator v0.29.7
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.4
+)
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
