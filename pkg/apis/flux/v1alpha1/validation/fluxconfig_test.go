@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 
@@ -335,6 +336,47 @@ var _ = Describe("FluxConfig validation", func() {
 						"Field": Equal("root.kustomization.template.spec.path"),
 					}))))
 				})
+			})
+		})
+		Describe("additionalSecretResources validation", func() {
+			It("should allow specifying nothing", func() {
+				fluxConfig.AdditionalSecretResources = nil
+				Expect(ValidateAdditionalSecretResources(fluxConfig.AdditionalSecretResources, shoot, rootFldPath)).To(BeEmpty())
+			})
+			It("should find all errors", func() {
+				fluxConfig.AdditionalSecretResources = []AdditionalResource{
+					{Name: "valid"},
+					{Name: "wrong-kind"},
+					{Name: "no-ref"},
+				}
+				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{
+					{
+						Name: "valid",
+						ResourceRef: autoscalingv1.CrossVersionObjectReference{
+							Kind: "Secret",
+						},
+					},
+					{
+						Name: "wrong-kind",
+						ResourceRef: autoscalingv1.CrossVersionObjectReference{
+							Kind: "ConfigMap",
+						},
+					},
+				}
+				Expect(
+					ValidateAdditionalSecretResources(fluxConfig.AdditionalSecretResources, shoot, rootFldPath),
+				).To(ConsistOf(
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":   Equal(field.ErrorTypeInvalid),
+						"Field":  Equal("root[1]"),
+						"Detail": ContainSubstring("is not a secret"),
+					})),
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":   Equal(field.ErrorTypeInvalid),
+						"Field":  Equal("root[2]"),
+						"Detail": ContainSubstring("does not match any of the resource names"),
+					})),
+				))
 			})
 		})
 	})

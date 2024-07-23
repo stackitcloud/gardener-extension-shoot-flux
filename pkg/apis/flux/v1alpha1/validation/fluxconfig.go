@@ -35,6 +35,7 @@ func ValidateFluxConfig(fluxConfig *fluxv1alpha1.FluxConfig, shoot *gardencorev1
 	if fluxConfig.Kustomization != nil {
 		allErrs = append(allErrs, ValidateKustomization(fluxConfig.Kustomization, fldPath.Child("kustomization"))...)
 	}
+	allErrs = append(allErrs, ValidateAdditionalSecretResources(fluxConfig.AdditionalSecretResources, shoot, fldPath.Child("additionalSecretResources"))...)
 
 	return allErrs
 }
@@ -118,6 +119,29 @@ func ValidateKustomization(kustomization *fluxv1alpha1.Kustomization, fldPath *f
 	specPath := templatePath.Child("spec")
 	if template.Spec.Path == "" {
 		allErrs = append(allErrs, field.Required(specPath.Child("path"), "Kustomization must have a path"))
+	}
+
+	return allErrs
+}
+
+// ValidateAdditionalSecretResources validates additionalResources
+func ValidateAdditionalSecretResources(additionalResources []fluxv1alpha1.AdditionalResource, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if len(additionalResources) == 0 {
+		return allErrs
+	}
+	resources := map[string]gardencorev1beta1.NamedResourceReference{}
+	for _, resource := range shoot.Spec.Resources {
+		resources[resource.Name] = resource
+	}
+	for i, r := range additionalResources {
+		if _, found := resources[r.Name]; !found {
+			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), r.Name, "additionalSecretResource name does not match any of the resource names in Shoot.spec.resources[].name"))
+			continue
+		}
+		if resources[r.Name].ResourceRef.Kind != "Secret" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), r.Name, "additionalSecretResource name references a Shoot.spec.resources[], which is not a secret"))
+		}
 	}
 
 	return allErrs
