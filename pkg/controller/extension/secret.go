@@ -8,15 +8,12 @@ import (
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
-	"github.com/gardener/gardener/pkg/utils"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 )
@@ -28,11 +25,13 @@ const (
 
 // ReconcileSecrets copies all secrets referenced in the extension (additionalSecretResources or
 // source.SecretResourceName), and deletes all secrets that are no longer referenced.
+// We cannot use gardener resource manager here, because we want to work in the namespace
+// "flux-system", which the resource manager is not configured for.
 func ReconcileSecrets(
 	ctx context.Context,
 	log logr.Logger,
-	shootClient client.Client,
 	seedClient client.Client,
+	shootClient client.Client,
 	seedNamespace string,
 	config *fluxv1alpha1.FluxConfig,
 	resources []gardencorev1beta1.NamedResourceReference,
@@ -41,7 +40,7 @@ func ReconcileSecrets(
 	secretsToKeep := sets.Set[string]{}
 
 	secretResources := config.AdditionalSecretResources
-	if config.Source.SecretResourceName != nil {
+	if config.Source != nil && config.Source.SecretResourceName != nil {
 		secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
 			Name:       *config.Source.SecretResourceName,
 			TargetName: ptr.To(config.Source.Template.Spec.SecretRef.Name),
@@ -110,30 +109,23 @@ func copySecretToShoot(
 			Namespace: targetNamespace,
 		},
 	}
-	// TODO: this should only create
-	res, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
-		shootSecret.Data = maps.Clone(seedSecret.Data)
-		setSecretMeta(seedSecret, shootSecret)
-		return nil
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to ensure secret resource")
+	err := shootClient.Get(ctx, client.ObjectKeyFromObject(shootSecret), shootSecret)
+	if client.IgnoreNotFound(err) != nil {
+		return "", err
 	}
-	if res != controllerutil.OperationResultNone {
-		log.Info("Ensured secret", "secretName", shootSecret.Name, "result", res)
+	if err == nil {
+		return shootSecret.Name, nil
 	}
+
+	shootSecret.Data = maps.Clone(seedSecret.Data)
+	shootSecret.Labels = map[string]string{
+		managedByLabelKey: managedByLabelValue,
+	}
+
+	if err := shootClient.Create(ctx, shootSecret); err != nil {
+		return "", err
+	}
+	log.Info("Created secret", "secretName", shootSecret.Name)
 
 	return shootSecret.Name, nil
-}
-
-func setSecretMeta(from, into client.Object) {
-	labels := from.GetLabels()
-	labels[managedByLabelKey] = managedByLabelValue
-	delete(labels, resourcesv1alpha1.ManagedBy)
-	into.SetLabels(utils.MergeStringMaps(into.GetLabels(), labels))
-
-	annotations := from.GetAnnotations()
-	delete(annotations, resourcesv1alpha1.OriginAnnotation)
-	delete(annotations, "resources.gardener.cloud/description")
-	into.SetAnnotations(utils.MergeStringMaps(into.GetAnnotations(), annotations))
 }
