@@ -4,10 +4,10 @@ go 1.22.3
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/fluxcd/flux2/v2 v2.2.3
-	github.com/fluxcd/kustomize-controller/api v1.2.2
-	github.com/fluxcd/pkg/apis/meta v1.3.0
-	github.com/fluxcd/source-controller/api v1.2.5
+	github.com/fluxcd/flux2/v2 v2.3.0
+	github.com/fluxcd/kustomize-controller/api v1.3.0
+	github.com/fluxcd/pkg/apis/meta v1.5.0
+	github.com/fluxcd/source-controller/api v1.3.0
 	github.com/gardener/gardener v1.92.3
 	github.com/go-logr/logr v1.4.2
 	github.com/ironcore-dev/vgopath v0.1.5
