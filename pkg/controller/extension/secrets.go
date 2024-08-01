@@ -69,7 +69,7 @@ func ReconcileSecrets(
 		if err := shootClient.Delete(ctx, &secret); client.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("failed to delete secret that is no longer referenced: %w", err)
 		}
-		log.Info("deleted secret that is no longer referenced by the extension", "secretName", secret.Name)
+		log.Info("Deleted secret that is no longer referenced by the extension", "secretName", secret.Name)
 	}
 	return nil
 }
@@ -122,7 +122,7 @@ func copySecretToShoot(
 		managedByLabelKey: managedByLabelValue,
 	}
 
-	if err := shootClient.Create(ctx, shootSecret); err != nil {
+	if err := shootClient.Create(ctx, shootSecret); client.IgnoreAlreadyExists(err) != nil {
 		return "", err
 	}
 	log.Info("Created secret", "secretName", shootSecret.Name)
