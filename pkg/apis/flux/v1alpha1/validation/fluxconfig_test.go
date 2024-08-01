@@ -211,6 +211,9 @@ var _ = Describe("FluxConfig validation", func() {
 					fluxConfig.Source.SecretResourceName = ptr.To("my-flux-secret")
 					shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
 						Name: "my-flux-secret",
+						ResourceRef: autoscalingv1.CrossVersionObjectReference{
+							Kind: "Secret",
+						},
 					}}
 
 					Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
@@ -238,6 +241,9 @@ var _ = Describe("FluxConfig validation", func() {
 					fluxConfig.Source.SecretResourceName = ptr.To("my-flux-secret")
 					shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
 						Name: "my-flux-secret",
+						ResourceRef: autoscalingv1.CrossVersionObjectReference{
+							Kind: "Secret",
+						},
 					}}
 
 					Expect(

@@ -4,9 +4,9 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 
@@ -89,14 +89,7 @@ func ValidateSource(source *fluxv1alpha1.Source, shoot *gardencorev1beta1.Shoot,
 	}
 
 	if hasSecretResourceName {
-		resourceNames := sets.New[string]()
-		for _, resource := range shoot.Spec.Resources {
-			resourceNames.Insert(resource.Name)
-		}
-
-		if !resourceNames.Has(*source.SecretResourceName) {
-			allErrs = append(allErrs, field.Invalid(secretResourceNamePath, *source.SecretResourceName, "secret resource name does not match any of the resource names in Shoot.spec.resources[].name"))
-		}
+		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *source.SecretResourceName)...)
 	}
 
 	return allErrs
@@ -130,19 +123,23 @@ func ValidateAdditionalSecretResources(additionalResources []fluxv1alpha1.Additi
 	if len(additionalResources) == 0 {
 		return allErrs
 	}
-	resources := map[string]gardencorev1beta1.NamedResourceReference{}
-	for _, resource := range shoot.Spec.Resources {
-		resources[resource.Name] = resource
-	}
+
 	for i, r := range additionalResources {
-		if _, found := resources[r.Name]; !found {
-			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), r.Name, "additionalSecretResource name does not match any of the resource names in Shoot.spec.resources[].name"))
-			continue
-		}
-		if resources[r.Name].ResourceRef.Kind != "Secret" {
-			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), r.Name, "additionalSecretResource name references a Shoot.spec.resources[], which is not a secret"))
-		}
+		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, fldPath.Index(i).Child("name"), r.Name)...)
 	}
 
+	return allErrs
+}
+
+func validateSecretResource(resources []gardencorev1beta1.NamedResourceReference, fldPath *field.Path, name string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	r := v1beta1helper.GetResourceByName(resources, name)
+	if r == nil {
+		allErrs = append(allErrs, field.Invalid(fldPath, name, "secret resource name does not match any of the resource names in Shoot.spec.resources[].name"))
+		return allErrs
+	}
+	if r.ResourceRef.Kind != "Secret" {
+		allErrs = append(allErrs, field.Invalid(fldPath, r.Name, "secret resource name references a Shoot.spec.resources[], which is not a secret"))
+	}
 	return allErrs
 }
