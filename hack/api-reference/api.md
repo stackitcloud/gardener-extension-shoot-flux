@@ -118,7 +118,10 @@ If provided, &ldquo;Source&rdquo; must also be provided.</p>
 </em>
 </td>
 <td>
-<p>AdditionalSecretResources to sync to the shoot.</p>
+<em>(Optional)</em>
+<p>AdditionalSecretResources to sync to the shoot.
+Secrets referenced here are only created if they don&rsquo;t exist in the shoot yet.
+When a secret is removed from this list, it is deleted in the shoot.</p>
 </td>
 </tr>
 </tbody>
