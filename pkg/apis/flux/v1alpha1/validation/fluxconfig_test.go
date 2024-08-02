@@ -346,7 +346,7 @@ var _ = Describe("FluxConfig validation", func() {
 	Describe("additionalSecretResources validation", func() {
 		It("should allow specifying nothing", func() {
 			fluxConfig.AdditionalSecretResources = nil
-			Expect(ValidateAdditionalSecretResources(fluxConfig.AdditionalSecretResources, shoot, rootFldPath)).To(BeEmpty())
+			Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
 		})
 		It("should find all errors", func() {
 			fluxConfig.AdditionalSecretResources = []AdditionalResource{
@@ -370,21 +370,21 @@ var _ = Describe("FluxConfig validation", func() {
 				},
 			}
 			Expect(
-				ValidateAdditionalSecretResources(fluxConfig.AdditionalSecretResources, shoot, rootFldPath),
+				ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 			).To(ConsistOf(
 				PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":   Equal(field.ErrorTypeInvalid),
-					"Field":  Equal("root[1].name"),
+					"Field":  Equal("root.additionalSecretResources[1].name"),
 					"Detail": ContainSubstring("is not a secret"),
 				})),
 				PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":   Equal(field.ErrorTypeInvalid),
-					"Field":  Equal("root[2].name"),
+					"Field":  Equal("root.additionalSecretResources[2].name"),
 					"Detail": ContainSubstring("does not match any of the resource names"),
 				})),
 				PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":   Equal(field.ErrorTypeInvalid),
-					"Field":  Equal("root[3].targetName"),
+					"Field":  Equal("root.additionalSecretResources[3].targetName"),
 					"Detail": ContainSubstring("must be a valid resource name"),
 				})),
 			))
