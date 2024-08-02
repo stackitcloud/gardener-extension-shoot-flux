@@ -354,6 +354,7 @@ var _ = Describe("FluxConfig validation", func() {
 					{Name: "valid"},
 					{Name: "wrong-kind"},
 					{Name: "no-ref"},
+					{Name: "valid", TargetName: ptr.To("invalid-name-")},
 				}
 				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{
 					{
@@ -374,13 +375,18 @@ var _ = Describe("FluxConfig validation", func() {
 				).To(ConsistOf(
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":   Equal(field.ErrorTypeInvalid),
-						"Field":  Equal("root[1]"),
+						"Field":  Equal("root[1].name"),
 						"Detail": ContainSubstring("is not a secret"),
 					})),
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":   Equal(field.ErrorTypeInvalid),
-						"Field":  Equal("root[2]"),
+						"Field":  Equal("root[2].name"),
 						"Detail": ContainSubstring("does not match any of the resource names"),
+					})),
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":   Equal(field.ErrorTypeInvalid),
+						"Field":  Equal("root[3].targetName"),
+						"Detail": ContainSubstring("must be a valid resource name"),
 					})),
 				))
 			})

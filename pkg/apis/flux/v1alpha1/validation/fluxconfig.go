@@ -7,6 +7,7 @@ import (
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 
@@ -125,6 +126,9 @@ func ValidateAdditionalSecretResources(additionalResources []fluxv1alpha1.Additi
 	}
 
 	for i, r := range additionalResources {
+		if ptr.Deref(r.TargetName, "") != "" && len(validation.IsDNS1123Subdomain(*r.TargetName)) > 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Index(i).Child("targetName"), *r.TargetName, "must be a valid resource name"))
+		}
 		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, fldPath.Index(i).Child("name"), r.Name)...)
 	}
 
