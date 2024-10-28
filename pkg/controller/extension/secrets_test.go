@@ -109,7 +109,7 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 		Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("extra")))
 	})
 
-	It("should not change an existing secret", func() {
+	It("should change an existing secret", func() {
 		createdSecret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
 			Name:      "extra",
 			Namespace: "flux-system",
@@ -123,7 +123,7 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 		).To(Succeed())
 
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(createdSecret), createdSecret)).To(Succeed())
-		Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("changed")))
+		Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("extra")))
 	})
 
 	It("should respect the target name and clean up the old secret", func() {

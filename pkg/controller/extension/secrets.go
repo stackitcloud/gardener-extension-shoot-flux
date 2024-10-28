@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 )
@@ -109,23 +110,18 @@ func copySecretToShoot(
 			Namespace: targetNamespace,
 		},
 	}
-	err := shootClient.Get(ctx, client.ObjectKeyFromObject(shootSecret), shootSecret)
-	if client.IgnoreNotFound(err) != nil {
+
+	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
+		shootSecret.Data = maps.Clone(seedSecret.Data)
+		shootSecret.Labels = map[string]string{
+			managedByLabelKey: managedByLabelValue,
+		}
+		return nil
+	})
+	if err != nil {
 		return "", err
 	}
-	if err == nil {
-		return shootSecret.Name, nil
-	}
-
-	shootSecret.Data = maps.Clone(seedSecret.Data)
-	shootSecret.Labels = map[string]string{
-		managedByLabelKey: managedByLabelValue,
-	}
-
-	if err := shootClient.Create(ctx, shootSecret); client.IgnoreAlreadyExists(err) != nil {
-		return "", err
-	}
-	log.Info("Created secret", "secretName", shootSecret.Name)
+	log.Info("Synced secret", "secretName", shootSecret.Name, "result", result)
 
 	return shootSecret.Name, nil
 }
