@@ -15,6 +15,12 @@ CODE_GENERATOR_VERSION ?= v0.29.5
 # Tools                                 #
 #########################################
 
+KO := $(TOOLS_BIN_DIR)/ko
+# renovate: datasource=github-releases depName=ko-build/ko
+KO_VERSION ?= v0.15.4
+$(KO): $(call tool_version_file,$(KO),$(KO_VERSION))
+	GOBIN=$(abspath $(TOOLS_BIN_DIR)) go install github.com/google/ko@$(KO_VERSION)
+
 $(DEEPCOPY_GEN):$(call tool_version_file,$(DEEPCOPY_GEN),$(CODE_GENERATOR_VERSION))
 	GOBIN=$(abspath $(TOOLS_BIN_DIR)) go install k8s.io/code-generator/cmd/deepcopy-gen@$(CODE_GENERATOR_VERSION)
 

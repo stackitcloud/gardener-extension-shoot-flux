@@ -1,6 +1,8 @@
 module github.com/stackitcloud/gardener-extension-shoot-flux
 
-go 1.22.3
+go 1.22.4
+
+toolchain go1.22.8
 
 replace (
 	// these replaces are needed, because gardener is on older k8s/controller-runtime packages
@@ -15,7 +17,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.3.0
 	github.com/fluxcd/pkg/apis/meta v1.5.0
 	github.com/fluxcd/source-controller/api v1.3.0
-	github.com/gardener/gardener v1.99.4
+	github.com/gardener/gardener v1.101.3
 	github.com/go-logr/logr v1.4.2
 	github.com/ironcore-dev/vgopath v0.1.6
 	github.com/onsi/ginkgo/v2 v2.20.2
@@ -55,9 +57,9 @@ require (
 	github.com/fluxcd/pkg/tar v0.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gardener/cert-management v0.15.0 // indirect
-	github.com/gardener/etcd-druid v0.22.1 // indirect
+	github.com/gardener/etcd-druid v0.22.4 // indirect
 	github.com/gardener/hvpa-controller/api v0.15.0 // indirect
-	github.com/gardener/machine-controller-manager v0.53.0 // indirect
+	github.com/gardener/machine-controller-manager v0.53.1 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/errors v0.20.4 // indirect
@@ -125,7 +127,7 @@ require (
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/time v0.6.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
@@ -134,17 +136,17 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.14.4 // indirect
-	istio.io/api v1.22.2 // indirect
+	istio.io/api v1.22.3 // indirect
 	istio.io/client-go v1.22.0 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.1.2 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-aggregator v0.29.6 // indirect
+	k8s.io/kube-aggregator v0.29.7 // indirect
 	k8s.io/kube-openapi v0.0.0-20240411171206-dc4e619f62f3 // indirect
-	k8s.io/kubelet v0.29.6 // indirect
-	k8s.io/metrics v0.29.6 // indirect
+	k8s.io/kubelet v0.29.7 // indirect
+	k8s.io/metrics v0.29.7 // indirect
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20231015215740-bf15e44028f9 // indirect
 	sigs.k8s.io/controller-tools v0.14.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
