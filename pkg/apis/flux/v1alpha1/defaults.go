@@ -17,7 +17,7 @@ const (
 
 	// defaultFluxVersion is maintained by renovate via a customManager. Don't
 	// change this without also updating the renovate config.
-	defaultFluxVersion = "v2.3.0"
+	defaultFluxVersion = "v2.4.0"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
