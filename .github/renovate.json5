@@ -12,6 +12,10 @@
   ],
   separateMinorPatch: true,
   commitMessagePrefix: '🤖 ',
+  additionalReviewers: [
+    'timebertt',
+    'maboehm',
+  ],
   customManagers: [
     {
       customType: 'regex',
