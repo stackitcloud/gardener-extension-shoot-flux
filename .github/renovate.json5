@@ -1,135 +1,131 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
   ],
-  "dependencyDashboard": true,
-  "postUpdateOptions": [
-    "gomodTidy"
+  dependencyDashboard: true,
+  postUpdateOptions: [
+    'gomodTidy',
   ],
-  "labels": [
-    "kind/upgrade"
+  labels: [
+    'kind/upgrade',
   ],
-  "separateMinorPatch": true,
-  "commitMessagePrefix": "\uD83E\uDD16 ",
-  "customManagers": [
+  separateMinorPatch: true,
+  commitMessagePrefix: '🤖 ',
+  customManagers: [
     {
-      "customType": "regex",
-      "fileMatch": [
-        "^pkg/apis/flux/.*\\.go$",
-        "^example/shoot\\.yaml"
+      customType: 'regex',
+      fileMatch: [
+        '^pkg/apis/flux/.*\\.go$',
+        '^example/shoot\\.yaml',
       ],
-      "matchStrings": [
-        "defaultFluxVersion = \"(?<currentValue>v[0-9.]+)\"",
-        // this matches any comment block that has 'renovate:flux-version', then
-        // any number of empty or comment lines, and then a substring that
-        // matches e.g. "Defaults to "v1.0.0".
-        "renovate:flux-version\\n(?:\\s*(?:\\/\\/).*\n)*.*Defaults to \"(?<currentValue>v[0-9.]+)\"",
-        // this matches any comment block that has 'renovate:flux-version', then
-        // any number of empty or comment lines, and then a substring that
-        // matches e.g. "version: v1.0.0".
-        "renovate:flux-version\\n(?:\\s*(?:#).*\n)*.*version: (?<currentValue>v[0-9.]+)\\s"
+      matchStrings: [
+        'defaultFluxVersion = "(?<currentValue>v[0-9.]+)"',
+        'renovate:flux-version\\n(?:\\s*(?:\\/\\/).*\n)*.*Defaults to "(?<currentValue>v[0-9.]+)"',
+        'renovate:flux-version\\n(?:\\s*(?:#).*\n)*.*version: (?<currentValue>v[0-9.]+)\\s',
       ],
-      "depNameTemplate": "github.com/fluxcd/flux2/v2",
-      "datasourceTemplate": "go"
-    }
+      depNameTemplate: 'github.com/fluxcd/flux2/v2',
+      datasourceTemplate: 'go',
+    },
   ],
-  "packageRules": [
+  packageRules: [
     {
-      "groupName": "fluxcd",
-      "matchDatasources": [
-        "go"
+      groupName: 'fluxcd',
+      matchDatasources: [
+        'go',
       ],
-      "matchPackagePrefixes": [
-        "github.com/fluxcd"
+      prBodyNotes: [
+        ':warning: This PR updates an API docstring, so you have to run `make generate` locally.',
       ],
-      "prBodyNotes": [
-        ":warning: This PR updates an API docstring, so you have to run `make generate` locally."
-      ]
+      matchPackageNames: [
+        'github.com/fluxcd{/,}**',
+      ],
     },
     {
-      "matchPackageNames": [
-        "github.com/onsi/gomega",
-        "github.com/onsi/ginkgo/v2"
+      matchPackageNames: [
+        'github.com/onsi/gomega',
+        'github.com/onsi/ginkgo/v2',
       ],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
     },
     {
-      // bump k8s, controller-runtime, and gardener go dependencies together
-      "groupName": "k8s and gardener packages",
-      "groupSlug": "k8s-gardener-go",
-      "matchDatasources": ["go"],
-      "matchPackagePrefixes": [
-        // from "group:kubernetes"
-        "k8s.io/api",
-        "k8s.io/apiextensions-apiserver",
-        "k8s.io/apimachinery",
-        "k8s.io/apiserver",
-        "k8s.io/cli-runtime",
-        "k8s.io/client-go",
-        "k8s.io/cloud-provider",
-        "k8s.io/cluster-bootstrap",
-        "k8s.io/code-generator",
-        "k8s.io/component-base",
-        "k8s.io/controller-manager",
-        "k8s.io/cri-api",
-        "k8s.io/csi-translation-lib",
-        "k8s.io/kube-aggregator",
-        "k8s.io/kube-controller-manager",
-        "k8s.io/kube-proxy",
-        "k8s.io/kube-scheduler",
-        "k8s.io/kubectl",
-        "k8s.io/kubelet",
-        "k8s.io/legacy-cloud-providers",
-        "k8s.io/metrics",
-        "k8s.io/mount-utils",
-        "k8s.io/pod-security-admission",
-        "k8s.io/sample-apiserver",
-        "k8s.io/sample-cli-plugin",
-        "k8s.io/sample-controller",
-        // added packages
-        "github.com/gardener/gardener",
-        "sigs.k8s.io/controller-runtime"
-      ]
+      groupName: 'k8s and gardener packages',
+      groupSlug: 'k8s-gardener-go',
+      matchDatasources: [
+        'go',
+      ],
+      matchPackageNames: [
+        'k8s.io/api{/,}**',
+        'k8s.io/apiextensions-apiserver{/,}**',
+        'k8s.io/apimachinery{/,}**',
+        'k8s.io/apiserver{/,}**',
+        'k8s.io/cli-runtime{/,}**',
+        'k8s.io/client-go{/,}**',
+        'k8s.io/cloud-provider{/,}**',
+        'k8s.io/cluster-bootstrap{/,}**',
+        'k8s.io/code-generator{/,}**',
+        'k8s.io/component-base{/,}**',
+        'k8s.io/controller-manager{/,}**',
+        'k8s.io/cri-api{/,}**',
+        'k8s.io/csi-translation-lib{/,}**',
+        'k8s.io/kube-aggregator{/,}**',
+        'k8s.io/kube-controller-manager{/,}**',
+        'k8s.io/kube-proxy{/,}**',
+        'k8s.io/kube-scheduler{/,}**',
+        'k8s.io/kubectl{/,}**',
+        'k8s.io/kubelet{/,}**',
+        'k8s.io/legacy-cloud-providers{/,}**',
+        'k8s.io/metrics{/,}**',
+        'k8s.io/mount-utils{/,}**',
+        'k8s.io/pod-security-admission{/,}**',
+        'k8s.io/sample-apiserver{/,}**',
+        'k8s.io/sample-cli-plugin{/,}**',
+        'k8s.io/sample-controller{/,}**',
+        'github.com/gardener/gardener{/,}**',
+        'sigs.k8s.io/controller-runtime{/,}**',
+      ],
     },
     {
-      // we need to bump k8s and controller-runtime minor versions together with gardener
-      // disable minor version bumps for k8s and controller-runtime
-      "matchDatasources": ["go"],
-      "matchUpdateTypes": ["minor"],
-      "matchPackagePrefixes": [
-        // from "group:kubernetes"
-        "k8s.io/api",
-        "k8s.io/apiextensions-apiserver",
-        "k8s.io/apimachinery",
-        "k8s.io/apiserver",
-        "k8s.io/cli-runtime",
-        "k8s.io/client-go",
-        "k8s.io/cloud-provider",
-        "k8s.io/cluster-bootstrap",
-        "k8s.io/code-generator",
-        "k8s.io/component-base",
-        "k8s.io/controller-manager",
-        "k8s.io/cri-api",
-        "k8s.io/csi-translation-lib",
-        "k8s.io/kube-aggregator",
-        "k8s.io/kube-controller-manager",
-        "k8s.io/kube-proxy",
-        "k8s.io/kube-scheduler",
-        "k8s.io/kubectl",
-        "k8s.io/kubelet",
-        "k8s.io/legacy-cloud-providers",
-        "k8s.io/metrics",
-        "k8s.io/mount-utils",
-        "k8s.io/pod-security-admission",
-        "k8s.io/sample-apiserver",
-        "k8s.io/sample-cli-plugin",
-        "k8s.io/sample-controller",
-        // added packages
-        "sigs.k8s.io/controller-runtime"
+      matchDatasources: [
+        'go',
       ],
-      "enabled": false
-    }
-  ]
+      matchUpdateTypes: [
+        'minor',
+      ],
+      enabled: false,
+      matchPackageNames: [
+        'k8s.io/api{/,}**',
+        'k8s.io/apiextensions-apiserver{/,}**',
+        'k8s.io/apimachinery{/,}**',
+        'k8s.io/apiserver{/,}**',
+        'k8s.io/cli-runtime{/,}**',
+        'k8s.io/client-go{/,}**',
+        'k8s.io/cloud-provider{/,}**',
+        'k8s.io/cluster-bootstrap{/,}**',
+        'k8s.io/code-generator{/,}**',
+        'k8s.io/component-base{/,}**',
+        'k8s.io/controller-manager{/,}**',
+        'k8s.io/cri-api{/,}**',
+        'k8s.io/csi-translation-lib{/,}**',
+        'k8s.io/kube-aggregator{/,}**',
+        'k8s.io/kube-controller-manager{/,}**',
+        'k8s.io/kube-proxy{/,}**',
+        'k8s.io/kube-scheduler{/,}**',
+        'k8s.io/kubectl{/,}**',
+        'k8s.io/kubelet{/,}**',
+        'k8s.io/legacy-cloud-providers{/,}**',
+        'k8s.io/metrics{/,}**',
+        'k8s.io/mount-utils{/,}**',
+        'k8s.io/pod-security-admission{/,}**',
+        'k8s.io/sample-apiserver{/,}**',
+        'k8s.io/sample-cli-plugin{/,}**',
+        'k8s.io/sample-controller{/,}**',
+        'sigs.k8s.io/controller-runtime{/,}**',
+      ],
+    },
+  ],
 }
