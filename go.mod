@@ -2,7 +2,7 @@ module github.com/stackitcloud/gardener-extension-shoot-flux
 
 go 1.22.4
 
-toolchain go1.22.8
+toolchain go1.22.9
 
 replace (
 	// these replaces are needed, because gardener is on older k8s/controller-runtime packages
