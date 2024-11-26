@@ -21,7 +21,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/ironcore-dev/vgopath v0.1.7
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/onsi/gomega v1.35.1
+	github.com/onsi/gomega v1.36.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.26.0
