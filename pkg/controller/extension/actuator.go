@@ -55,6 +55,11 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("error reading Cluster object: %w", err)
 	}
 
+	if extensionscontroller.IsHibernationEnabled(cluster) {
+		// when hibernation is enabled there is nothing for us to do
+		return nil
+	}
+
 	config, err := a.DecodeProviderConfig(ext.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("error decoding providerConfig: %w", err)
