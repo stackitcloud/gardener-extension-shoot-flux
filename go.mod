@@ -18,14 +18,14 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.27.0
-	k8s.io/api v0.31.1
-	k8s.io/apiextensions-apiserver v0.31.1
-	k8s.io/apimachinery v0.31.1
-	k8s.io/client-go v0.31.1
-	k8s.io/code-generator v0.31.1
-	k8s.io/component-base v0.31.1
+	k8s.io/api v0.31.3
+	k8s.io/apiextensions-apiserver v0.31.3
+	k8s.io/apimachinery v0.31.3
+	k8s.io/client-go v0.31.3
+	k8s.io/code-generator v0.31.3
+	k8s.io/component-base v0.31.3
 	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078
-	sigs.k8s.io/controller-runtime v0.19.0
+	sigs.k8s.io/controller-runtime v0.19.3
 )
 
 require (
@@ -48,7 +48,6 @@ require (
 	github.com/fluxcd/pkg/apis/kustomize v1.6.1 // indirect
 	github.com/fluxcd/pkg/kustomize v1.13.0 // indirect
 	github.com/fluxcd/pkg/tar v0.8.1 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gardener/cert-management v0.15.0 // indirect
 	github.com/gardener/etcd-druid v0.22.7 // indirect
