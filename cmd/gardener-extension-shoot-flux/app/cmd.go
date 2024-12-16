@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/gardener/cmd/utils"
+	"github.com/gardener/gardener/cmd/utils/initrun"
 	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 	"github.com/go-logr/logr"
@@ -33,7 +33,7 @@ func NewCommand() *cobra.Command {
 		Short: Name + " bootstraps Flux in shoot clusters",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			log, err := utils.InitRun(cmd, opts, Name)
+			log, err := initrun.InitRun(cmd, opts, Name)
 			if err != nil {
 				return err
 			}
