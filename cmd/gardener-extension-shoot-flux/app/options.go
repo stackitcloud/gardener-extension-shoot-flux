@@ -10,7 +10,7 @@ import (
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	"github.com/gardener/gardener/cmd/utils"
+	"github.com/gardener/gardener/cmd/utils/initrun"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	extensionscmdcontroller "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
@@ -32,7 +32,7 @@ import (
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/controller/healthcheck"
 )
 
-var _ utils.Options = &options{}
+var _ initrun.Options = &options{}
 
 // options holds configuration passed to the Shoot Flux controller.
 type options struct {
