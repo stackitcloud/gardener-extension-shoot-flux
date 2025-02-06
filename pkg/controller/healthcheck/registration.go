@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	extensionsconfig "github.com/gardener/gardener/extensions/pkg/apis/config"
+	extensionsconfig "github.com/gardener/gardener/extensions/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
@@ -30,7 +30,7 @@ var (
 // RegisterHealthChecks registers health checks for the Extension resource.
 // The controller doesn't actually perform any health checks. However, it removes the health check Conditions written
 // by previous versions of the extension from the Extension status.
-func RegisterHealthChecks(ctx context.Context, mgr manager.Manager, opts healthcheck.DefaultAddArgs) error {
+func RegisterHealthChecks(mgr manager.Manager, opts healthcheck.DefaultAddArgs) error {
 	// Health checks don't make any sense as long as the extension only cares about bootstrapping flux once.
 	// This happens during Extension reconciliation, so the shoot reconciliation either continues successfully or fails at
 	// this step.
@@ -38,7 +38,6 @@ func RegisterHealthChecks(ctx context.Context, mgr manager.Manager, opts healthc
 	// purpose.
 	// TODO: add real health checks when this extension offers reconciling the flux resources
 	return healthcheck.DefaultRegistration(
-		ctx,
 		"shoot-flux",
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
 		func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} },
@@ -52,6 +51,6 @@ func RegisterHealthChecks(ctx context.Context, mgr manager.Manager, opts healthc
 }
 
 // AddToManager adds a controller with the default Options.
-func AddToManager(ctx context.Context, mgr manager.Manager) error {
-	return RegisterHealthChecks(ctx, mgr, DefaultAddOptions)
+func AddToManager(_ context.Context, mgr manager.Manager) error {
+	return RegisterHealthChecks(mgr, DefaultAddOptions)
 }
