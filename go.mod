@@ -10,7 +10,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.4.0
 	github.com/fluxcd/pkg/apis/meta v1.6.1
 	github.com/fluxcd/source-controller/api v1.4.1
-	github.com/gardener/gardener v1.111.2
+	github.com/gardener/gardener v1.112.1
 	github.com/go-logr/logr v1.4.2
 	github.com/ironcore-dev/vgopath v0.1.7
 	github.com/onsi/ginkgo/v2 v2.22.2
@@ -50,7 +50,7 @@ require (
 	github.com/fluxcd/pkg/tar v0.8.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/gardener/cert-management v0.17.2 // indirect
+	github.com/gardener/cert-management v0.17.3 // indirect
 	github.com/gardener/etcd-druid v0.26.1 // indirect
 	github.com/gardener/machine-controller-manager v0.56.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
@@ -114,15 +114,15 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.9.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/time v0.10.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
@@ -132,7 +132,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.16.4 // indirect
 	istio.io/api v1.24.2 // indirect
-	istio.io/client-go v1.24.1 // indirect
+	istio.io/client-go v1.24.2 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.2.2 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
