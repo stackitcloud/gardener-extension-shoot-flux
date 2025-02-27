@@ -36,10 +36,6 @@ import (
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
 )
 
-const (
-	shootInfoConfigMapName = "shoot-info-envsubst"
-)
-
 type actuator struct {
 	client  client.Client
 	decoder runtime.Decoder
@@ -80,7 +76,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("error creating shoot client: %w", err)
 	}
 
-	if err := reconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
 		return fmt.Errorf("error reconciling shootInfoConfigMap: %w", err)
 	}
 
@@ -148,7 +144,7 @@ func (a *actuator) Restore(context.Context, logr.Logger, *extensionsv1alpha1.Ext
 // ReconcileShootInfoConfigMap creates or updates a ConfigMap in the specified Flux namespace in the shoot cluster.
 // The ConfigMap contains information about the Shoot cluster, such as its technical ID which can be used for
 // substitutions in flux kustomizations or helmreleases.
-func reconcileShootInfoConfigMap(
+func ReconcileShootInfoConfigMap(
 	ctx context.Context,
 	log logr.Logger,
 	shootClient client.Client,
@@ -168,7 +164,10 @@ func reconcileShootInfoConfigMap(
 		}
 		configMap.Data = map[string]string{
 			"SHOOT_TECHNICAL_ID": cluster.Shoot.Status.TechnicalID,
-			// TBD
+			"SHOOT_NAME":         cluster.Shoot.Name,
+			"CLUSTER_NAME":       cluster.Shoot.Name,
+			"SEED_NAME":          *cluster.Shoot.Status.SeedName,
+			"DOMAIN":             *cluster.Shoot.Spec.DNS.Domain,
 		}
 		return nil
 	})

@@ -19,11 +19,6 @@ import (
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 )
 
-const (
-	managedByLabelKey   = "app.kubernetes.io/managed-by"
-	managedByLabelValue = "gardener-extension-" + fluxv1alpha1.ExtensionType
-)
-
 // ReconcileSecrets copies all secrets referenced in the extension (additionalSecretResources or
 // source.SecretResourceName), and deletes all secrets that are no longer referenced.
 // We cannot use gardener resource manager here, because we want to work in the namespace
