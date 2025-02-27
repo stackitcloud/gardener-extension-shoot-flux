@@ -41,9 +41,9 @@ However, in certain scenarios, this approach will dramatically improve the effec
 
 ## `shoot-info-envsubst` `ConfigMap`
 
-If the extension is enabled for a shoot cluster a configMap named `shoot-info-envsubst` with information about the shoot
-is created in the flux namespace. The configMap can be used for [substituteFrom](https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution)
-in kustomizations.
+If the extension is enabled for a shoot cluster a `ConfigMap` named `shoot-info-envsubst` with information about the shoot
+is created in the flux namespace. The `ConfigMap` can be used in [`substituteFrom`](https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution)
+in `Kustomizations`.
 
 # How to...
 

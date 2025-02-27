@@ -77,7 +77,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	}
 
 	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
-		return fmt.Errorf("error reconciling shootInfoConfigMap: %w", err)
+		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 	}
 
 	if IsFluxBootstrapped(ext) {
@@ -172,10 +172,12 @@ func ReconcileShootInfoConfigMap(
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create or update %s: %w", shootInfoConfigMapName, err)
+		return fmt.Errorf("failed to create or update ConfigMap %q: %w", client.ObjectKeyFromObject(configMap), err)
 	}
 
-	log.Info("Synced configMap", "Name:", shootInfoConfigMapName, "result", result)
+	if result != controllerutil.OperationResultNone {
+		log.Info("Synced shoot info ConfigMap", "configMap", client.ObjectKeyFromObject(configMap))
+	}
 
 	return err
 }
