@@ -166,7 +166,6 @@ func ReconcileShootInfoConfigMap(
 			"SHOOT_TECHNICAL_ID": cluster.Shoot.Status.TechnicalID,
 			"SHOOT_NAME":         cluster.Shoot.Name,
 			"CLUSTER_NAME":       cluster.Shoot.Name,
-			"SEED_NAME":          *cluster.Shoot.Status.SeedName,
 			"DOMAIN":             *cluster.Shoot.Spec.DNS.Domain,
 		}
 		return nil
