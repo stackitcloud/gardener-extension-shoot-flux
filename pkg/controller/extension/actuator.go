@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gardener/gardener/pkg/extensions"
-	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"time"
 
 	fluxinstall "github.com/fluxcd/flux2/v2/pkg/manifestgen/install"
@@ -38,7 +37,7 @@ import (
 )
 
 const (
-	managedResourceName = "extension-shoot-flux-shoot"
+	shootInfoConfigMapName = "shoot-info-envsubst"
 )
 
 type actuator struct {
@@ -76,14 +75,13 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("invalid providerConfig: %w", allErrs.ToAggregate())
 	}
 
-	if err := a.CreateManagedResource(ctx, log, config, cluster); err != nil {
-		// TBD
-		return fmt.Errorf("error creating or updating managed resource: %w", err)
-	}
-
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating shoot client: %w", err)
+	}
+
+	if err := reconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+		return fmt.Errorf("error reconciling shootInfoConfigMap: %w", err)
 	}
 
 	if IsFluxBootstrapped(ext) {
@@ -124,39 +122,12 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	return nil
 }
 
-func (a *actuator) CreateManagedResource(ctx context.Context, logger logr.Logger, fluxCfg *fluxv1alpha1.FluxConfig, cluster *extensions.Cluster) error {
-	registry := managedresources.NewRegistry(kubernetes.ShootScheme, kubernetes.ShootCodec, kubernetes.ShootSerializer)
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "shoot-envsubst",
-			Namespace: *fluxCfg.Flux.Namespace,
-		},
-		Data: map[string]string{
-			"SHOOT_TECHNICAL_ID": cluster.Shoot.Status.TechnicalID,
-			// TBD
-		},
-	}
-	secretData, err := registry.AddAllAndSerialize(configMap)
-	if err != nil {
-		return fmt.Errorf("failed to serialize configmap: %w", err)
-	}
-	return managedresources.CreateForShoot(
-		ctx,
-		a.client,
-		cluster.ObjectMeta.Name,
-		managedResourceName,
-		managedByLabelValue,
-		false,
-		secretData,
-	)
-}
-
-// Delete only removes the managed resource. The extension purposely does not perform deletion of the deployed Flux components or resources
+// Delete does nothing. The extension purposely does not perform deletion of the deployed Flux components or resources
 // because it will most likely be a destructive operation. If users want to uninstall flux, they should use the
 // documented approaches. On Shoot deletion, the objects will be cleaned up anyway, there is no point in deleting them
 // gracefully.
-func (a *actuator) Delete(ctx context.Context, _ logr.Logger, ext *extensionsv1alpha1.Extension) error {
-	return managedresources.DeleteForShoot(ctx, a.client, ext.Namespace, managedResourceName)
+func (a *actuator) Delete(context.Context, logr.Logger, *extensionsv1alpha1.Extension) error {
+	return nil
 }
 
 // ForceDelete force deletes the extension resource.
@@ -172,6 +143,43 @@ func (a *actuator) Migrate(context.Context, logr.Logger, *extensionsv1alpha1.Ext
 // Restore the extension resource.
 func (a *actuator) Restore(context.Context, logr.Logger, *extensionsv1alpha1.Extension) error {
 	return nil
+}
+
+// ReconcileShootInfoConfigMap creates or updates a ConfigMap in the specified Flux namespace in the shoot cluster.
+// The ConfigMap contains information about the Shoot cluster, such as its technical ID which can be used for
+// substitutions in flux kustomizations or helmreleases.
+func reconcileShootInfoConfigMap(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	fluxCfg *fluxv1alpha1.FluxConfig,
+	cluster *extensions.Cluster,
+) error {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      shootInfoConfigMapName,
+			Namespace: *fluxCfg.Flux.Namespace,
+		},
+	}
+
+	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, configMap, func() error {
+		configMap.Labels = map[string]string{
+			managedByLabelKey: managedByLabelValue,
+		}
+		configMap.Data = map[string]string{
+			"SHOOT_TECHNICAL_ID": cluster.Shoot.Status.TechnicalID,
+			// TBD
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to create or update %s: %w", shootInfoConfigMapName, err)
+	}
+
+	log.Info("Synced configMap", "Name:", shootInfoConfigMapName, "result", result)
+
+	return err
 }
 
 // DecodeProviderConfig decodes the given providerConfig and performs API defaulting. If the providerConfig is empty,
