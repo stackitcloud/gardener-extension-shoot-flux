@@ -16,6 +16,7 @@ Please find more information regarding the extensibility concepts and a detailed
 - [Gardener Extension for Flux](#gardener-extension-for-flux)
 - [What does this package provide?](#what-does-this-package-provide)
     - [Example use case](#example-use-case)
+    - [shoot-info-envsubst ConfigMap](#shoot-info-envsubst-configmap)
 - [How to...](#how-to)
     - [Use it as a gardener operator](#use-it-as-a-gardener-operator)
     - [Develop this extension locally](#develop-this-extension-locally)
@@ -43,7 +44,11 @@ However, in certain scenarios, this approach will dramatically improve the effec
 
 If the extension is enabled for a shoot cluster a `ConfigMap` named `shoot-info-envsubst` with information about the shoot
 is created in the flux namespace. The `ConfigMap` can be used in [`substituteFrom`](https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution)
-in `Kustomizations`.
+in `Kustomizations`. The following information is provided:
+
+- SHOOT_INFO_TECHNICAL_ID
+- SHOOT_INFO_NAME
+- SHOOT_INFO_CLUSTER_IDENTITY
 
 # How to...
 
