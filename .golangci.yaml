@@ -8,7 +8,7 @@ linters:
   - revive
   - unused
   - importas
-  - exportloopref
+  - copyloopvar
   - nilerr
   - whitespace
 
