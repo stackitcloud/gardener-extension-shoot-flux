@@ -76,7 +76,10 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("invalid providerConfig: %w", allErrs.ToAggregate())
 	}
 
-	// Managedresource
+	if err := a.CreateManagedResource(ctx, log, config, cluster); err != nil {
+		// TBD
+		return fmt.Errorf("error creating or updating managed resource: %w", err)
+	}
 
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
