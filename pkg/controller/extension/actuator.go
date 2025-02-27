@@ -3,7 +3,6 @@ package extension
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/gardener/pkg/extensions"
 	"time"
 
 	fluxinstall "github.com/fluxcd/flux2/v2/pkg/manifestgen/install"
@@ -17,6 +16,7 @@ import (
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/pkg/utils/kubernetes/health"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
