@@ -258,9 +258,8 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 
 	It("should apply successfully and contain expected keys", func() {
 		shootName := "test-shoot"
-		testDomain := fmt.Sprintf("%s.test-domain.com", shootName)
 		technicalID := fmt.Sprintf("shoot--asdf-test-%s", shootName)
-		seedName := "seed01"
+		clusterIdentity := "magic-cluster-identity"
 		shootClient = newShootClient()
 		config = &fluxv1alpha1.FluxConfig{
 			Flux: &fluxv1alpha1.FluxInstallation{
@@ -272,14 +271,9 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: shootName,
 				},
-				Spec: gardencorev1beta1.ShootSpec{
-					DNS: &gardencorev1beta1.DNS{
-						Domain: ptr.To(testDomain),
-					},
-				},
 				Status: gardencorev1beta1.ShootStatus{
-					TechnicalID: technicalID,
-					SeedName:    ptr.To(seedName),
+					TechnicalID:     technicalID,
+					ClusterIdentity: &clusterIdentity,
 				},
 			},
 		}
@@ -292,15 +286,12 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 
 		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
 
-		createdConfigMap := &corev1.ConfigMap{}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), createdConfigMap))
-		Expect(len(createdConfigMap.Data)).To(Equal(5))
-		Expect(createdConfigMap.Data).To(Equal(map[string]string{
-			"DOMAIN":             testDomain,
-			"SEED_NAME":          seedName,
-			"SHOOT_NAME":         shootName,
-			"CLUSTER_NAME":       shootName,
-			"SHOOT_TECHNICAL_ID": technicalID,
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap))
+		Expect(len(configMap.Data)).To(Equal(3))
+		Expect(configMap.Data).To(Equal(map[string]string{
+			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
+			"SHOOT_INFO_NAME":             shootName,
+			"SHOOT_INFO_TECHNICAL_ID":     technicalID,
 		}))
 	})
 })
