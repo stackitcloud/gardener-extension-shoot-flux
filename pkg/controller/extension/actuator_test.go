@@ -2,6 +2,9 @@ package extension
 
 import (
 	"context"
+	"fmt"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/extensions"
 	"io"
 	"os"
 	"path/filepath"
@@ -244,6 +247,61 @@ var _ = Describe("GenerateInstallManifest", func() {
 			ContainSubstring("registry.example.com"),
 			ContainSubstring("a-namespace"),
 		))
+	})
+})
+
+var _ = Describe("ReconcileShootInfoConfigMap", func() {
+	var (
+		shootClient client.Client
+		config      *fluxv1alpha1.FluxConfig
+	)
+
+	It("should apply successfully and contain expected keys", func() {
+		shootName := "test-shoot"
+		testDomain := fmt.Sprintf("%s.test-domain.com", shootName)
+		technicalID := fmt.Sprintf("shoot--asdf-test-%s", shootName)
+		seedName := "seed01"
+		shootClient = newShootClient()
+		config = &fluxv1alpha1.FluxConfig{
+			Flux: &fluxv1alpha1.FluxInstallation{
+				Namespace: ptr.To("flux-system"),
+			},
+		}
+		cluster := &extensions.Cluster{
+			Shoot: &gardencorev1beta1.Shoot{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: shootName,
+				},
+				Spec: gardencorev1beta1.ShootSpec{
+					DNS: &gardencorev1beta1.DNS{
+						Domain: ptr.To(testDomain),
+					},
+				},
+				Status: gardencorev1beta1.ShootStatus{
+					TechnicalID: technicalID,
+					SeedName:    ptr.To(seedName),
+				},
+			},
+		}
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      shootInfoConfigMapName,
+				Namespace: *config.Flux.Namespace,
+			},
+		}
+
+		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
+
+		createdConfigMap := &corev1.ConfigMap{}
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), createdConfigMap))
+		Expect(len(createdConfigMap.Data)).To(Equal(5))
+		Expect(createdConfigMap.Data).To(Equal(map[string]string{
+			"DOMAIN":             testDomain,
+			"SEED_NAME":          seedName,
+			"SHOOT_NAME":         shootName,
+			"CLUSTER_NAME":       shootName,
+			"SHOOT_TECHNICAL_ID": technicalID,
+		}))
 	})
 })
 
