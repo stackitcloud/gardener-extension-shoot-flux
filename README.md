@@ -39,7 +39,7 @@ In this case, you can make use of this extension and pre-spawn `Shoot`s, which a
 Of course, there is a trade-off, as your pre-spawned shoots will consume some resources (either in terms of money, if running in a public cloud, or in terms of physical resources).
 However, in certain scenarios, this approach will dramatically improve the effectiveness of you CI-workflow.
 
-## shoot-info-envsubst configMap
+## `shoot-info-envsubst` `ConfigMap`
 
 If the extension is enabled for a shoot cluster a configMap named `shoot-info-envsubst` with information about the shoot
 is created in the flux namespace. The configMap can be used for [substituteFrom](https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution)
