@@ -3,6 +3,8 @@ package extension
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/gardener/pkg/extensions"
+	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"time"
 
 	fluxinstall "github.com/fluxcd/flux2/v2/pkg/manifestgen/install"
@@ -33,6 +35,10 @@ import (
 
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
+)
+
+const (
+	managedResourceName = "extension-shoot-flux-shoot"
 )
 
 type actuator struct {
@@ -69,6 +75,8 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	if allErrs := validation.ValidateFluxConfig(config, cluster.Shoot, nil); len(allErrs) > 0 {
 		return fmt.Errorf("invalid providerConfig: %w", allErrs.ToAggregate())
 	}
+
+	// Managedresource
 
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
@@ -113,12 +121,39 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	return nil
 }
 
-// Delete does nothing. The extension purposely does not perform deletion of the deployed Flux components or resources
+func (a *actuator) CreateManagedResource(ctx context.Context, logger logr.Logger, fluxCfg *fluxv1alpha1.FluxConfig, cluster *extensions.Cluster) error {
+	registry := managedresources.NewRegistry(kubernetes.ShootScheme, kubernetes.ShootCodec, kubernetes.ShootSerializer)
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "shoot-envsubst",
+			Namespace: *fluxCfg.Flux.Namespace,
+		},
+		Data: map[string]string{
+			"SHOOT_TECHNICAL_ID": cluster.Shoot.Status.TechnicalID,
+			// TBD
+		},
+	}
+	secretData, err := registry.AddAllAndSerialize(configMap)
+	if err != nil {
+		return fmt.Errorf("failed to serialize configmap: %w", err)
+	}
+	return managedresources.CreateForShoot(
+		ctx,
+		a.client,
+		cluster.ObjectMeta.Name,
+		managedResourceName,
+		managedByLabelValue,
+		false,
+		secretData,
+	)
+}
+
+// Delete only removes the managed resource. The extension purposely does not perform deletion of the deployed Flux components or resources
 // because it will most likely be a destructive operation. If users want to uninstall flux, they should use the
 // documented approaches. On Shoot deletion, the objects will be cleaned up anyway, there is no point in deleting them
 // gracefully.
-func (a *actuator) Delete(context.Context, logr.Logger, *extensionsv1alpha1.Extension) error {
-	return nil
+func (a *actuator) Delete(ctx context.Context, _ logr.Logger, ext *extensionsv1alpha1.Extension) error {
+	return managedresources.DeleteForShoot(ctx, a.client, ext.Namespace, managedResourceName)
 }
 
 // ForceDelete force deletes the extension resource.
