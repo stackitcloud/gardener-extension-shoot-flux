@@ -286,7 +286,7 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 
 		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
 
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap))
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).To(Succeed())
 		Expect(len(configMap.Data)).To(Equal(3))
 		Expect(configMap.Data).To(Equal(map[string]string{
 			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
