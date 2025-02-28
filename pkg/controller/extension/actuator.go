@@ -178,7 +178,7 @@ func ReconcileShootInfoConfigMap(
 		log.Info("Synced shoot info ConfigMap", "configMap", client.ObjectKeyFromObject(configMap))
 	}
 
-	return err
+	return nil
 }
 
 // DecodeProviderConfig decodes the given providerConfig and performs API defaulting. If the providerConfig is empty,

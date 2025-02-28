@@ -258,7 +258,7 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 
 	It("should apply successfully and contain expected keys", func() {
 		shootName := "test-shoot"
-		technicalID := fmt.Sprintf("shoot--asdf-test-%s", shootName)
+		technicalID := fmt.Sprintf("shoot--asdf-test--%s", shootName)
 		clusterIdentity := "magic-cluster-identity"
 		shootClient = newShootClient()
 		config = &fluxv1alpha1.FluxConfig{
