@@ -163,9 +163,9 @@ func ReconcileShootInfoConfigMap(
 			managedByLabelKey: managedByLabelValue,
 		}
 		configMap.Data = map[string]string{
-			"SHOOT_INFO_TECHNICAL_ID":     cluster.Shoot.Status.TechnicalID,
-			"SHOOT_INFO_NAME":             cluster.Shoot.Name,
 			"SHOOT_INFO_CLUSTER_IDENTITY": *cluster.Shoot.Status.ClusterIdentity,
+			"SHOOT_INFO_NAME":             cluster.Shoot.Name,
+			"SHOOT_INFO_TECHNICAL_ID":     cluster.Shoot.Status.TechnicalID,
 		}
 		return nil
 	})

@@ -16,7 +16,7 @@ Please find more information regarding the extensibility concepts and a detailed
 - [Gardener Extension for Flux](#gardener-extension-for-flux)
 - [What does this package provide?](#what-does-this-package-provide)
     - [Example use case](#example-use-case)
-    - [shoot-info-envsubst ConfigMap](#shoot-info-envsubst-configmap)
+    - [shoot-info ConfigMap](#shoot-info-configmap)
 - [How to...](#how-to)
     - [Use it as a gardener operator](#use-it-as-a-gardener-operator)
     - [Develop this extension locally](#develop-this-extension-locally)
@@ -40,15 +40,21 @@ In this case, you can make use of this extension and pre-spawn `Shoot`s, which a
 Of course, there is a trade-off, as your pre-spawned shoots will consume some resources (either in terms of money, if running in a public cloud, or in terms of physical resources).
 However, in certain scenarios, this approach will dramatically improve the effectiveness of you CI-workflow.
 
-## `shoot-info-envsubst` `ConfigMap`
+## `shoot-info` `ConfigMap`
 
-If the extension is enabled for a shoot cluster a `ConfigMap` named `shoot-info-envsubst` with information about the shoot
+If the extension is enabled for a shoot cluster a `ConfigMap` named `shoot-info` with information about the shoot
 is created in the flux namespace. The `ConfigMap` can be used in [`substituteFrom`](https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution)
 in `Kustomizations`. The following information is provided:
 
-- SHOOT_INFO_TECHNICAL_ID
-- SHOOT_INFO_NAME
-- SHOOT_INFO_CLUSTER_IDENTITY
+| key | purpose                                                                                                                | example value                                                        |
+|-----|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| SHOOT_INFO_CLUSTER_IDENTITY    | the unique cluster identity which is unique even if the cluster gets re-created.                                       | shoot--someproject--testcluster-5fdf7ca4-5cse-4ab0-a5c4-54faf32f8765 |
+| SHOOT_INFO_NAME | name of the shoot cluster. Be aware that there can be multiple clusters with the same name in different projects.      | testcluster                                                          |
+ | SHOOT_INFO_TECHNICAL_ID | contains name of the shoot cluster and the gardener project it's created in. This is unique per gardener installation. | shoot--someproject--testcluster                                      |
+
+Like the other resources (flux installation) provisioned by this configMap is not deleted when the extension is removed
+from the shoot cluster. This behaviour is intentional to keep the flux installation intact and allow the user to remove
+it in a controlled manner. Please be aware that the `configMap` is no longer updated when the extension is no longer active.
 
 # How to...
 
