@@ -16,6 +16,7 @@ import (
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/pkg/utils/kubernetes/health"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -73,6 +74,10 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	_, shootClient, err := util.NewClientForShoot(ctx, a.client, ext.Namespace, client.Options{Scheme: a.client.Scheme()}, extensionsconfig.RESTOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating shoot client: %w", err)
+	}
+
+	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 	}
 
 	if IsFluxBootstrapped(ext) {
@@ -133,6 +138,46 @@ func (a *actuator) Migrate(context.Context, logr.Logger, *extensionsv1alpha1.Ext
 
 // Restore the extension resource.
 func (a *actuator) Restore(context.Context, logr.Logger, *extensionsv1alpha1.Extension) error {
+	return nil
+}
+
+// ReconcileShootInfoConfigMap creates or updates a ConfigMap in the specified Flux namespace in the shoot cluster.
+// The ConfigMap contains information about the Shoot cluster, such as its technical ID which can be used for
+// substitutions in flux kustomizations or helmreleases.
+func ReconcileShootInfoConfigMap(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	fluxCfg *fluxv1alpha1.FluxConfig,
+	cluster *extensions.Cluster,
+) error {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      shootInfoConfigMapName,
+			Namespace: *fluxCfg.Flux.Namespace,
+		},
+	}
+
+	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, configMap, func() error {
+		configMap.Labels = map[string]string{
+			managedByLabelKey: managedByLabelValue,
+		}
+		configMap.Data = map[string]string{
+			"SHOOT_INFO_CLUSTER_IDENTITY": *cluster.Shoot.Status.ClusterIdentity,
+			"SHOOT_INFO_NAME":             cluster.Shoot.Name,
+			"SHOOT_INFO_TECHNICAL_ID":     cluster.Shoot.Status.TechnicalID,
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to create or update ConfigMap %q: %w", client.ObjectKeyFromObject(configMap), err)
+	}
+
+	if result != controllerutil.OperationResultNone {
+		log.Info("Synced shoot info ConfigMap", "configMap", client.ObjectKeyFromObject(configMap))
+	}
+
 	return nil
 }
 

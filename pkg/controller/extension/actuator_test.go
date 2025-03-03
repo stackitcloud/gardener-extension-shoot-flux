@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,7 +11,9 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	fluxmeta "github.com/fluxcd/pkg/apis/meta"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	"github.com/gardener/gardener/pkg/extensions"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -22,6 +25,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
@@ -244,6 +248,81 @@ var _ = Describe("GenerateInstallManifest", func() {
 			ContainSubstring("registry.example.com"),
 			ContainSubstring("a-namespace"),
 		))
+	})
+})
+
+var _ = Describe("ReconcileShootInfoConfigMap", func() {
+	var (
+		shootName       string
+		technicalID     string
+		clusterIdentity string
+		shootClient     client.Client
+		config          *fluxv1alpha1.FluxConfig
+		cluster         *extensions.Cluster
+		configMap       *corev1.ConfigMap
+	)
+
+	BeforeEach(func() {
+		shootName = "test-shoot"
+		technicalID = fmt.Sprintf("shoot--asdf-test--%s", shootName)
+		clusterIdentity = "magic-cluster-identity"
+		shootClient = newShootClient()
+		config = &fluxv1alpha1.FluxConfig{
+			Flux: &fluxv1alpha1.FluxInstallation{
+				Namespace: ptr.To("flux-system"),
+			},
+		}
+		cluster = &extensions.Cluster{
+			Shoot: &gardencorev1beta1.Shoot{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: shootName,
+				},
+				Status: gardencorev1beta1.ShootStatus{
+					TechnicalID:     technicalID,
+					ClusterIdentity: &clusterIdentity,
+				},
+			},
+		}
+		configMap = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      shootInfoConfigMapName,
+				Namespace: *config.Flux.Namespace,
+			},
+		}
+	})
+
+	It("should apply successfully and contain expected keys", func() {
+		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
+
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).To(Succeed())
+		Expect(len(configMap.Data)).To(Equal(3))
+		Expect(configMap.Data).To(Equal(map[string]string{
+			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
+			"SHOOT_INFO_NAME":             shootName,
+			"SHOOT_INFO_TECHNICAL_ID":     technicalID,
+		}))
+	})
+
+	It("should overwrite changes in existing configmap", func() {
+		customConfigMap := configMap.DeepCopy()
+
+		_, err := controllerutil.CreateOrUpdate(ctx, shootClient, customConfigMap, func() error {
+			customConfigMap.Data = map[string]string{
+				"FOOBAR": "should be gone after reconcile",
+			}
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).To(Succeed())
+		Expect(len(configMap.Data)).To(Equal(3))
+		Expect(configMap.Data).To(Equal(map[string]string{
+			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
+			"SHOOT_INFO_NAME":             shootName,
+			"SHOOT_INFO_TECHNICAL_ID":     technicalID,
+		}))
+		Expect(configMap.Data["FOOBAR"]).To(BeEmpty())
 	})
 })
 
