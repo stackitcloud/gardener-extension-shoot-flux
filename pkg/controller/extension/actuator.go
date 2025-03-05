@@ -105,6 +105,11 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		}
 	}
 
+	// configMap might be necessary for the kustomization to get ready
+	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
+	}
+
 	if config.Kustomization != nil {
 		if err := BootstrapKustomization(ctx, log, shootClient, config.Kustomization); err != nil {
 			return fmt.Errorf("error bootstrappping Flux Kustomization: %w", err)
