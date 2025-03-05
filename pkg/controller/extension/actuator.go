@@ -76,15 +76,15 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		return fmt.Errorf("error creating shoot client: %w", err)
 	}
 
-	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
-		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
-	}
-
 	if IsFluxBootstrapped(ext) {
 		log.V(1).Info("Flux installation has been bootstrapped already, will only reconcile secrets")
 
 		if err := ReconcileSecrets(ctx, log, a.client, shootClient, ext.Namespace, config, cluster.Shoot.Spec.Resources); err != nil {
 			return fmt.Errorf("error reconciling secrets: %w", err)
+		}
+
+		if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+			return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 		}
 
 		return nil
@@ -103,6 +103,11 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 		if err := BootstrapSource(ctx, log, shootClient, config.Source); err != nil {
 			return fmt.Errorf("error bootstrappping Flux GitRepository: %w", err)
 		}
+	}
+
+	// configMap might be necessary for the kustomization to get ready
+	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 	}
 
 	if config.Kustomization != nil {
