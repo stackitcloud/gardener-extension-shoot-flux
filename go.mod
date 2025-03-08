@@ -10,7 +10,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.4.0
 	github.com/fluxcd/pkg/apis/meta v1.6.1
 	github.com/fluxcd/source-controller/api v1.4.1
-	github.com/gardener/gardener v1.113.0
+	github.com/gardener/gardener v1.113.1
 	github.com/go-logr/logr v1.4.2
 	github.com/ironcore-dev/vgopath v0.1.7
 	github.com/onsi/ginkgo/v2 v2.22.2
@@ -25,7 +25,7 @@ require (
 	k8s.io/code-generator v0.32.2
 	k8s.io/component-base v0.32.2
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.3
 )
 
 require (
