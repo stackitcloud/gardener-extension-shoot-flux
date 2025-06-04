@@ -9,7 +9,7 @@ require (
 	github.com/fluxcd/pkg/apis/meta v1.6.1
 	github.com/fluxcd/source-controller/api v1.4.1
 	github.com/gardener/gardener v1.115.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/ironcore-dev/vgopath v0.1.8
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.2
