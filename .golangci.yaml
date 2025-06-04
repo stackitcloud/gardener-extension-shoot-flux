@@ -1,53 +1,16 @@
+version: "2"
 run:
   concurrency: 4
-  deadline: 10m
-
-
 linters:
   enable:
-  - revive
-  - unused
-  - importas
   - copyloopvar
+  - importas
   - nilerr
+  - revive
   - whitespace
-
-issues:
-  exclude-use-default: false
-  exclude:
-  # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
-  - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
-  # revive:
-  - var-naming # ((var|const|struct field|func) .* should be .*
-  - dot-imports # should not use dot imports
-  - package-comments # package comment should be of the form
-  - unexported-return # exported func .* returns unexported type .*, which can be annoying to use
-  - indent-error-flow # if block ends with a return statement, so drop this else and outdent its block
-  - "exported: (type|func) name will be used as .* by other packages, and that stutters;"
-  # typecheck:
-  - "undeclared name: `.*`"
-  - "\".*\" imported but not used"
-  # allow non-capitalized messages if they start with technical terms
-  - "structured logging message should be capitalized: \"garden(er-apiserver|er-controller-manager|er-admission-controller|er-operator|er-resource-manager|let)"
-  - "exported function SetDefaults_.* should have comment or be unexported"
-  exclude-rules:
-  - linters:
-    - staticcheck
-    text: "SA1019:" # Excludes messages where deprecated variables are used
-  exclude-files:
-    - "zz_generated\\..*\\.go$"
-
-linters-settings:
-  revive:
-    rules:
-    - name: duplicated-imports
-    - name: unused-parameter
-    - name: unreachable-code
-    - name: context-as-argument
-    - name: early-return
-    - name: exported
-  importas:
-    alias:
+  settings:
+    importas:
+      alias:
       - pkg: github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/(\w+)/(v[\w\d]+)
         alias: $1$2
       # External imported packages
@@ -87,7 +50,7 @@ linters-settings:
       - pkg: github.com/gardener/gardener/extensions/pkg/webhook
         alias: extensionswebhook
       - pkg: github.com/gardener/gardener/extensions/pkg/webhook/([^m]\w+)
-        alias:  extensions${1}webhook
+        alias: extensions${1}webhook
       # Gardener other packages
       - pkg: github.com/gardener/gardener/pkg/api/extensions
         alias: apiextensions
@@ -106,3 +69,54 @@ linters-settings:
       # Flux APIs
       - pkg: github.com/fluxcd/(\w+)-controller/api/([\w\d]+)
         alias: $1$2
+    revive:
+      rules:
+      - name: duplicated-imports
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: context-as-argument
+      - name: early-return
+      - name: exported
+  exclusions:
+    generated: lax
+    rules:
+    - linters:
+      - staticcheck
+      text: 'SA1019:' # Excludes messages where deprecated variables are used
+    - path: (.+)\.go$
+      # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
+      text: Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
+    - path: (.+)\.go$
+      text: var-naming # ((var|const|struct field|func) .* should be .*
+    - path: (.+)\.go$
+      text: dot-imports # should not use dot imports
+    - path: (.+)\.go$
+      text: package-comments
+    - path: (.+)\.go$
+      text: unexported-return # exported func .* returns unexported type .*, which can be annoying to use
+    - path: (.+)\.go$
+      text: indent-error-flow # if block ends with a return statement, so drop this else and outdent its block
+    - path: (.+)\.go$
+      text: 'exported: (type|func) name will be used as .* by other packages, and that stutters;'
+    # typecheck
+    - path: (.+)\.go$
+      text: 'undeclared name: `.*`'
+    - path: (.+)\.go$
+      text: '".*" imported but not used'
+    # allow non-capitalized messages if they start with technical terms
+    - path: (.+)\.go$
+      text: 'structured logging message should be capitalized: "garden(er-apiserver|er-controller-manager|er-admission-controller|er-operator|er-resource-manager|let)'
+    - path: (.+)\.go$
+      text: exported function SetDefaults_.* should have comment or be unexported
+    paths:
+    - zz_generated\..*\.go$
+    - third_party$
+    - builtin$
+    - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
