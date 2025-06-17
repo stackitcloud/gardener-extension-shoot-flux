@@ -10,7 +10,7 @@ rm -rf "$helm_artifacts"
 mkdir -p "$helm_artifacts"
 
 function image_registry() {
-  echo "$1" | cut -d '/' -f 1
+  echo "$1" | cut -d '/' -f -2
 }
 
 function image_repo() {
