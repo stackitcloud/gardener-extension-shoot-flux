@@ -54,6 +54,13 @@ images: export LD_FLAGS := $(LD_FLAGS)
 images: $(KO)
 	KO_DOCKER_REPO=$(REPO) $(KO) build --sbom none -t $(TAG) --bare --platform linux/amd64,linux/arm64 --push=$(PUSH) ./cmd/gardener-extension-shoot-flux
 
+.PHONY: artifacts-only
+artifacts-only: $(YQ) $(HELM) ## Builds helm charts (`charts/`)
+	hack/push-artifacts.sh $(REPO)/$(EXTENSION_PREFIX)-$(NAME):$(TAG)
+
+.PHONY: artifacts
+artifacts: images artifacts-only ## Builds all artifacts.
+
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
 #####################################################################
