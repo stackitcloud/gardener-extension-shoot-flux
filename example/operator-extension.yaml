@@ -1,0 +1,16 @@
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: shoot-flux
+  annotations:
+    security.gardener.cloud/pod-security-enforce: privileged
+spec:
+  resources:
+  - kind: Extension
+    type: shoot-flux
+  deployment:
+    extension:
+      helm:
+        ociRepository:
+          repository: ghcr.io/stackitcloud/charts/gardener-extension-shoot-flux
+          tag: latest
