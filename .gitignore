@@ -1,4 +1,5 @@
-artifacts
+artifacts/
+images.txt
 
 # Binaries for programs and plugins
 *.exe

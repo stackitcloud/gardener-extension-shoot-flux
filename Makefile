@@ -47,16 +47,19 @@ debug:
 #################################################################
 
 PUSH ?= false
+OUTPUT_IMAGES_PATH ?= "images.txt"
+
 images: export KO_DOCKER_REPO = $(REPO)
 images: export LD_FLAGS := $(LD_FLAGS)
 
 .PHONY: images
 images: $(KO)
-	KO_DOCKER_REPO=$(REPO) $(KO) build --sbom none -t $(TAG) --bare --platform linux/amd64,linux/arm64 --push=$(PUSH) ./cmd/gardener-extension-shoot-flux
+	KO_DOCKER_REPO=$(REPO) $(KO) build --sbom none -t $(TAG) --bare --platform linux/amd64,linux/arm64 --push=$(PUSH) ./cmd/gardener-extension-shoot-flux \
+	  | tee $(OUTPUT_IMAGES_PATH)
 
 .PHONY: artifacts-only
 artifacts-only: $(YQ) $(HELM) ## Builds helm charts (`charts/`)
-	hack/push-artifacts.sh $(REPO)/$(EXTENSION_PREFIX)-$(NAME):$(TAG)
+	hack/push-artifacts.sh $(OUTPUT_IMAGES_PATH)
 
 .PHONY: artifacts
 artifacts: images artifacts-only ## Builds all artifacts.

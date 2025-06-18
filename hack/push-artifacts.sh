@@ -4,28 +4,33 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+image=$(cat "$1")
 chart_name=gardener-extension-shoot-flux
 helm_artifacts=artifacts/charts
 rm -rf "$helm_artifacts"
 mkdir -p "$helm_artifacts"
 
-function image_registry() {
-  echo "$1" | cut -d '/' -f -2
+function oci_repo() {
+   echo "$image" | rev | cut -d'/' -f2- | rev
 }
 
 function image_repo() {
-  echo "$1" | cut -d ':' -f 1
+  echo "$image" | cut -d ':' -f 1
 }
 
 function image_tag() {
-  echo "$1" | cut -d ':' -f 2-
+  echo "$(image_tag_with_digest)" | cut -d'@' -f1
+}
+
+function image_tag_with_digest(){
+   echo "$image" | cut -d ':' -f 2-
 }
 
 ## HELM
 cp -r charts/${chart_name} "$helm_artifacts"
 yq -i "\
-  ( .image.repository = \"$(image_repo "$1")\" ) | \
-  ( .image.tag = \"$(image_tag "$1")\" )\
+  ( .image.repository = \"$(image_repo)\" ) | \
+  ( .image.tag = \"$(image_tag_with_digest)\" )\
 " "$helm_artifacts/${chart_name}/values.yaml"
 
 # push to registry
@@ -34,5 +39,5 @@ if [ "$PUSH" != "true" ] ; then
   exit 0
 fi
 
-helm package "$helm_artifacts/${chart_name}" --version "$(image_tag "$1")" -d "$helm_artifacts" > /dev/null 2>&1
-helm push "$helm_artifacts/${chart_name}-"* "oci://$(image_registry "$1")/charts"
+helm package "$helm_artifacts/${chart_name}" --version "$(image_tag)" -d "$helm_artifacts" > /dev/null 2>&1
+helm push "$helm_artifacts/${chart_name}-"* "oci://$(oci_repo)/charts"
