@@ -47,7 +47,7 @@ debug:
 #################################################################
 
 PUSH ?= false
-OUTPUT_IMAGES_PATH ?= "images.txt"
+OUTPUT_IMAGES_PATH = "images.txt"
 
 images: export KO_DOCKER_REPO = $(REPO)
 images: export LD_FLAGS := $(LD_FLAGS)
