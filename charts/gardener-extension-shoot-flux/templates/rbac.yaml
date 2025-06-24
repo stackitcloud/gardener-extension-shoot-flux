@@ -55,7 +55,6 @@ rules:
   - shoot-flux-leader-election
   verbs:
   - get
-  - watch
   - update
   - patch
 ---
