@@ -51,18 +51,12 @@ rules:
   resources:
   - leases
   resourceNames:
-  - shoot-flux-leader-election
-  verbs:
-  - update
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  resourceNames:
   - gardener-extension-heartbeat
+  - shoot-flux-leader-election
   verbs:
   - get
   - update
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
