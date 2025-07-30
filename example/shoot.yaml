@@ -50,7 +50,8 @@ spec:
   #     kind: Secret
   #     name: project-vault-secret
 
-  cloudProfileName: local
+  cloudProfile:
+    name: local
   secretBindingName: local # dummy, doesn't contain any credentials
   region: local
   networking:
