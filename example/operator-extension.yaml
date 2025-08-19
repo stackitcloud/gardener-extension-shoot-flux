@@ -2,12 +2,12 @@ apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
   name: shoot-flux
-  annotations:
-    security.gardener.cloud/pod-security-enforce: privileged
 spec:
   resources:
   - kind: Extension
     type: shoot-flux
+    lifecycle:
+      reconcile: AfterWorker
   deployment:
     extension:
       helm:

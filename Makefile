@@ -90,7 +90,6 @@ check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
 
 .PHONY: generate
 generate: $(VGOPATH) $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM)
-	@bash $(GARDENER_HACK_DIR)/generate-controller-registration.sh --pod-security-enforce=privileged shoot-flux charts/gardener-extension-shoot-flux latest deploy/extension/base/controller-registration.yaml Extension:shoot-flux
 	@VGOPATH=$(VGOPATH) \
 	REPO_ROOT=$(REPO_ROOT) \
 	GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) \
