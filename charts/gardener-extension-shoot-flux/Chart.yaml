@@ -8,3 +8,5 @@ appVersion: "1.0"
 description: A Helm chart for the Gardener Shoot Flux Extension
 name: gardener-extension-shoot-flux
 version: 0.1.0
+sources:
+  - https://github.com/stackitcloud/gardener-extension-shoot-flux
