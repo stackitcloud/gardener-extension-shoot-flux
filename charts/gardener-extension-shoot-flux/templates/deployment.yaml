@@ -42,6 +42,10 @@ spec:
     spec:
       priorityClassName: gardener-system-900
       serviceAccountName: {{ include "name" . }}
+{{- if .Values.podSecurityContext }}
+      securityContext:
+{{- toYaml .Values.podSecurityContext | nindent 8 }}
+{{- end }}
       containers:
       - name: {{ include "name" . }}
         image: {{ include "image" . }}
@@ -94,4 +98,8 @@ spec:
 {{- if .Values.resources }}
         resources:
 {{ toYaml .Values.resources | nindent 10 }}
+{{- end }}
+{{- if .Values.containerSecurityContext }}
+        securityContext:
+{{- toYaml .Values.containerSecurityContext | nindent 10 }}
 {{- end }}
