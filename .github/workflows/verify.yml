@@ -23,7 +23,7 @@ jobs:
         working-directory: go/src/github.com/stackitcloud/gardener-extension-shoot-flux
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         path: go/src/github.com/stackitcloud/gardener-extension-shoot-flux
     - uses: actions/setup-go@v6
