@@ -42,6 +42,8 @@ spec:
     spec:
       priorityClassName: gardener-system-900
       serviceAccountName: {{ include "name" . }}
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: {{ include "name" . }}
         image: {{ include "image" . }}
@@ -95,3 +97,7 @@ spec:
         resources:
 {{ toYaml .Values.resources | nindent 10 }}
 {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
