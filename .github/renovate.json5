@@ -20,9 +20,9 @@
   customManagers: [
     {
       customType: 'regex',
-      fileMatch: [
-        '^pkg/apis/flux/.*\\.go$',
-        '^example/shoot\\.yaml',
+      managerFilePatterns: [
+        '/^pkg/apis/flux/.*\\.go$/',
+        '/^example/shoot\\.yaml/',
       ],
       matchStrings: [
         'defaultFluxVersion = "(?<currentValue>v[0-9.]+)"',
@@ -64,8 +64,8 @@
       automerge: true,
     },
     {
-      // bump k8s, controller-runtime, and gardener go dependencies together
       groupName: 'k8s and gardener packages',
+      description: 'bump k8s, controller-runtime, and gardener go dependencies together',
       groupSlug: 'k8s-gardener-go',
       matchDatasources: [
         'go',
@@ -104,8 +104,7 @@
       ],
     },
     {
-      // we need to bump k8s and controller-runtime minor versions together with gardener
-      // disable minor version bumps for k8s and controller-runtime
+      description: 'we need to bump k8s and controller-runtime minor versions together with gardener disable minor version bumps for k8s and controller-runtime',
       matchDatasources: [
         'go',
       ],
