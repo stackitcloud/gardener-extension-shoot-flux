@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-GARDENER_HACK_DIR := $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)/hack
+ENSURE_GARDENER_MOD         := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-flux
