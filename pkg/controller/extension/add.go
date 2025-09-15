@@ -27,13 +27,15 @@ type AddOptions struct {
 	Controller controller.Options
 	// IgnoreOperationAnnotation specifies whether to ignore the operation annotation or not.
 	IgnoreOperationAnnotation bool
+
+	GardenClusterIdentity string
 }
 
 // AddToManagerWithOptions adds a controller with the given Options to the given manager.
 // The opts.Reconciler is being set with a newly instantiated actuator.
 func AddToManagerWithOptions(ctx context.Context, mgr manager.Manager, opts AddOptions) error {
 	return extension.Add(mgr, extension.AddArgs{
-		Actuator:          NewActuator(mgr.GetClient()),
+		Actuator:          NewActuator(mgr.GetClient(), opts.GardenClusterIdentity),
 		ControllerOptions: opts.Controller,
 		Name:              ControllerName,
 		FinalizerSuffix:   fluxv1alpha1.ExtensionType,

@@ -61,6 +61,9 @@ spec:
         {{- if .Values.healthPort }}
         - --health-bind-address=:{{ .Values.healthPort }}
         {{- end }}
+        {{- with .Values.gardener.garden.clusterIdentity }}
+        - --garden-cluster-identity={{ . }}
+        {{- end }}
         {{- if .Values.gardener.version }}
         - --gardener-version={{ .Values.gardener.version }}
         {{- end }}

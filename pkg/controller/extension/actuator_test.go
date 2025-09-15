@@ -43,7 +43,7 @@ var _ = Describe("DecodeProviderConfig", func() {
 		Expect(fluxv1alpha1.AddToScheme(scheme)).To(Succeed())
 		fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
 
-		a = NewActuator(fakeClient).(*actuator)
+		a = NewActuator(fakeClient, "garden-id").(*actuator)
 	})
 
 	Context("valid providerConfig given", func() {
@@ -292,14 +292,14 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 	})
 
 	It("should apply successfully and contain expected keys", func() {
-		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
+		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster, "garden-id")).To(Succeed())
 
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).To(Succeed())
-		Expect(len(configMap.Data)).To(Equal(3))
 		Expect(configMap.Data).To(Equal(map[string]string{
-			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
-			"SHOOT_INFO_NAME":             shootName,
-			"SHOOT_INFO_TECHNICAL_ID":     technicalID,
+			"SHOOT_INFO_CLUSTER_IDENTITY":        clusterIdentity,
+			"SHOOT_INFO_NAME":                    shootName,
+			"SHOOT_INFO_TECHNICAL_ID":            technicalID,
+			"SHOOT_INFO_GARDEN_CLUSTER_IDENTITY": "garden-id",
 		}))
 	})
 
@@ -314,15 +314,15 @@ var _ = Describe("ReconcileShootInfoConfigMap", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster)).To(Succeed())
+		Expect(ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster, "garden-id")).To(Succeed())
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).To(Succeed())
-		Expect(len(configMap.Data)).To(Equal(3))
 		Expect(configMap.Data).To(Equal(map[string]string{
-			"SHOOT_INFO_CLUSTER_IDENTITY": clusterIdentity,
-			"SHOOT_INFO_NAME":             shootName,
-			"SHOOT_INFO_TECHNICAL_ID":     technicalID,
+			"SHOOT_INFO_CLUSTER_IDENTITY":        clusterIdentity,
+			"SHOOT_INFO_NAME":                    shootName,
+			"SHOOT_INFO_TECHNICAL_ID":            technicalID,
+			"SHOOT_INFO_GARDEN_CLUSTER_IDENTITY": "garden-id",
 		}))
-		Expect(configMap.Data["FOOBAR"]).To(BeEmpty())
+		Expect(configMap.Data).ToNot(HaveKey("FOOBAR"))
 	})
 })
 

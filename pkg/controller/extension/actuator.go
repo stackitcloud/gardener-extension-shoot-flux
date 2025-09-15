@@ -39,13 +39,16 @@ import (
 type actuator struct {
 	client  client.Client
 	decoder runtime.Decoder
+
+	gardenClusterIdentity string
 }
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(client client.Client) extension.Actuator {
+func NewActuator(client client.Client, gardenClusterIdentity string) extension.Actuator {
 	return &actuator{
-		client:  client,
-		decoder: serializer.NewCodecFactory(client.Scheme()).UniversalDecoder(),
+		client:                client,
+		decoder:               serializer.NewCodecFactory(client.Scheme()).UniversalDecoder(),
+		gardenClusterIdentity: gardenClusterIdentity,
 	}
 }
 
@@ -83,7 +86,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 			return fmt.Errorf("error reconciling secrets: %w", err)
 		}
 
-		if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+		if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster, a.gardenClusterIdentity); err != nil {
 			return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 		}
 
@@ -106,7 +109,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	}
 
 	// configMap might be necessary for the kustomization to get ready
-	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster); err != nil {
+	if err := ReconcileShootInfoConfigMap(ctx, log, shootClient, config, cluster, a.gardenClusterIdentity); err != nil {
 		return fmt.Errorf("error reconciling ConfigMap %q: %w", shootInfoConfigMapName, err)
 	}
 
@@ -155,6 +158,7 @@ func ReconcileShootInfoConfigMap(
 	shootClient client.Client,
 	fluxCfg *fluxv1alpha1.FluxConfig,
 	cluster *extensions.Cluster,
+	gardenClusterIdentity string,
 ) error {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -168,9 +172,10 @@ func ReconcileShootInfoConfigMap(
 			managedByLabelKey: managedByLabelValue,
 		}
 		configMap.Data = map[string]string{
-			"SHOOT_INFO_CLUSTER_IDENTITY": *cluster.Shoot.Status.ClusterIdentity,
-			"SHOOT_INFO_NAME":             cluster.Shoot.Name,
-			"SHOOT_INFO_TECHNICAL_ID":     cluster.Shoot.Status.TechnicalID,
+			"SHOOT_INFO_CLUSTER_IDENTITY":        *cluster.Shoot.Status.ClusterIdentity,
+			"SHOOT_INFO_NAME":                    cluster.Shoot.Name,
+			"SHOOT_INFO_TECHNICAL_ID":            cluster.Shoot.Status.TechnicalID,
+			"SHOOT_INFO_GARDEN_CLUSTER_IDENTITY": gardenClusterIdentity,
 		}
 		return nil
 	})
