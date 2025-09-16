@@ -16,13 +16,11 @@ import (
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	extensionsheartbeatcontroller "github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	extensionsheartbeatcmd "github.com/gardener/gardener/extensions/pkg/controller/heartbeat/cmd"
-	"github.com/gardener/gardener/extensions/pkg/util"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	componentbaseconfig "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -45,6 +43,8 @@ type options struct {
 	controllerSwitches *extensionscmdcontroller.SwitchOptions
 	reconcileOptions   *extensionscmdcontroller.ReconcilerOptions
 	optionAggregator   extensionscmdcontroller.OptionAggregator
+
+	gardenClusterIdentity string
 
 	// completed options
 	RESTConfig     *rest.Config
@@ -100,6 +100,7 @@ func newOptions() *options {
 
 func (o *options) addFlags(fs *pflag.FlagSet) {
 	o.optionAggregator.AddFlags(fs)
+	fs.StringVar(&o.gardenClusterIdentity, "garden-cluster-identity", "garden", "Identity of the Garden cluster. Should be set by the controllerinstallation controller")
 }
 
 func (o *options) Complete() error {
@@ -109,11 +110,6 @@ func (o *options) Complete() error {
 
 	// customize rest config
 	o.RESTConfig = o.restOptions.Completed().Config
-	// TODO: consider dropping this or make these settings configurable
-	util.ApplyClientConnectionConfigurationToRESTConfig(&componentbaseconfig.ClientConnectionConfiguration{
-		QPS:   100.0,
-		Burst: 130,
-	}, o.RESTConfig)
 
 	// customize manager options
 	o.ManagerOptions = o.managerOptions.Completed().Options()

@@ -51,7 +51,10 @@ metrics:
   ##
   enableScraping: true
 
+# Values set by controllerinstallationcontroller
 gardener:
+  garden:
+    clusterIdentity: ""
   version: ""
   gardenlet:
     featureGates: {}

@@ -64,6 +64,7 @@ func run(ctx context.Context, log logr.Logger, o *options) error {
 	}
 
 	log.Info("Adding controllers to manager")
+	extension.DefaultAddOptions.GardenClusterIdentity = o.gardenClusterIdentity
 	o.extensionOptions.Completed().Apply(&extension.DefaultAddOptions.Controller)
 	o.healthOptions.Completed().Apply(&healthcheck.DefaultAddOptions.Controller)
 	o.heartbeatOptions.Completed().Apply(&heartbeat.DefaultAddOptions)
