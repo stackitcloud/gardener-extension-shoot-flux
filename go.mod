@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.7.0
 	github.com/fluxcd/pkg/apis/meta v1.21.0
 	github.com/fluxcd/source-controller/api v1.7.1
-	github.com/gardener/gardener v1.128.1
+	github.com/gardener/gardener v1.129.0
 	github.com/go-logr/logr v1.4.3
 	github.com/ironcore-dev/vgopath v0.1.8
 	github.com/onsi/ginkgo/v2 v2.25.3
@@ -108,7 +108,7 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/nexucis/lamenv v0.5.2 // indirect
-	github.com/open-telemetry/opentelemetry-operator v0.132.0 // indirect
+	github.com/open-telemetry/opentelemetry-operator v0.135.0 // indirect
 	github.com/perses/common v0.27.1-0.20250326140707-96e439b14e0e // indirect
 	github.com/perses/perses v0.51.0 // indirect
 	github.com/perses/perses-operator v0.2.0 // indirect
@@ -134,7 +134,7 @@ require (
 	github.com/zitadel/schema v1.3.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.37.0 // indirect
-	go.opentelemetry.io/contrib/otelconf v0.17.0 // indirect
+	go.opentelemetry.io/contrib/otelconf v0.18.0 // indirect
 	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.14.0 // indirect
