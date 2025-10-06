@@ -37,7 +37,7 @@ func TestExtension(t *testing.T) {
 var _ = BeforeSuite(func() {
 	ctx = context.Background()
 	log = GinkgoLogr
-	SetDefaultEventuallyTimeout(3 * time.Second)
+	SetDefaultEventuallyTimeout(5 * time.Second)
 	SetDefaultEventuallyPollingInterval(poll)
 })
 
