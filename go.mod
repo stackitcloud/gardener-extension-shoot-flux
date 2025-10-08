@@ -6,7 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/fluxcd/flux2/v2 v2.7.0
 	github.com/fluxcd/kustomize-controller/api v1.7.0
-	github.com/fluxcd/pkg/apis/meta v1.21.0
+	github.com/fluxcd/pkg/apis/meta v1.22.0
 	github.com/fluxcd/source-controller/api v1.7.1
 	github.com/gardener/gardener v1.129.0
 	github.com/go-logr/logr v1.4.3
@@ -164,7 +164,7 @@ require (
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
