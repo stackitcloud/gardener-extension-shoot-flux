@@ -178,8 +178,8 @@ github.com/gardener/cert-management v0.18.0 h1:s2YhkN8z7lXe9En52GCeqQ9be10uEbLtH
 github.com/gardener/cert-management v0.18.0/go.mod h1:9+JT+EBJB2OIX65EG+P1p/DZ/UJ3W8WR0h40ZjKbw+Q=
 github.com/gardener/etcd-druid/api v0.32.0 h1:B3MEBe9q3+Q0jjFb/BhMigde05mYkVjWzVHgFd0/WuA=
 github.com/gardener/etcd-druid/api v0.32.0/go.mod h1:Qpl1PDJ+bKa6OPWk4o7WBzvjPqZc/CxIXbiTkdRhCrg=
-github.com/gardener/gardener v1.129.0 h1:cyfBZAW/ISSAXtZb6s9FxY4m1A68Je2eorYPJxNh/bM=
-github.com/gardener/gardener v1.129.0/go.mod h1:ok40pupWZBJ9nr21WTB5zpuTTt7cw0Al6y0q9cCGYuY=
+github.com/gardener/gardener v1.129.1 h1:w1WLmEo/1IqLV5vyWI+X+ZbfgX7vkloJf3Rv5Vud8QU=
+github.com/gardener/gardener v1.129.1/go.mod h1:ok40pupWZBJ9nr21WTB5zpuTTt7cw0Al6y0q9cCGYuY=
 github.com/gardener/machine-controller-manager v0.60.0 h1:aaSE85Yu0hcHYsP5/x1rxWa5o2zhmsmXlKQ+xefHY/Q=
 github.com/gardener/machine-controller-manager v0.60.0/go.mod h1:8eE1qLztrWIbOM71mHSQGaC6Q+pl5lvOyN08qP39D7o=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -909,8 +909,8 @@ k8s.io/utils v0.0.0-20200729134348-d5654de09c73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/
 k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 h1:SjGebBtkBqHFOli+05xYbK8YF1Dzkbzn+gDM4X9T4Ck=
 k8s.io/utils v0.0.0-20251002143259-bc988d571ff4/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
-sigs.k8s.io/controller-runtime v0.22.1 h1:Ah1T7I+0A7ize291nJZdS1CabF/lB4E++WizgV24Eqg=
-sigs.k8s.io/controller-runtime v0.22.1/go.mod h1:FwiwRjkRPbiN+zp2QRp7wlTCzbUXxZ/D4OzuQUDwBHY=
+sigs.k8s.io/controller-runtime v0.22.3 h1:I7mfqz/a/WdmDCEnXmSPm8/b/yRTy6JsKKENTijTq8Y=
+sigs.k8s.io/controller-runtime v0.22.3/go.mod h1:+QX1XUpTXN4mLoblf4tqr5CQcyHPAki2HLXqQMY6vh8=
 sigs.k8s.io/controller-tools v0.18.0 h1:rGxGZCZTV2wJreeRgqVoWab/mfcumTMmSwKzoM9xrsE=
 sigs.k8s.io/controller-tools v0.18.0/go.mod h1:gLKoiGBriyNh+x1rWtUQnakUYEujErjXs9pf+x/8n1U=
 sigs.k8s.io/gateway-api v1.3.0 h1:q6okN+/UKDATola4JY7zXzx40WO4VISk7i9DIfOvr9M=
