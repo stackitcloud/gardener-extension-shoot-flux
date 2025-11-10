@@ -32,17 +32,31 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 	// validation will ensure that both Source & Kustomization or set or both
 	// are nil, but we have to handle all cases, since defaulting happens first.
 	if obj.Source != nil && obj.Kustomization != nil {
-		if sourceName := obj.Source.Template.Name; obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
+		var sourceName, sourceNamespace string
+		if obj.Source.GitRepository != nil {
+			sourceName = obj.Source.GitRepository.Template.Name
+			sourceNamespace = obj.Source.GitRepository.Template.Namespace
+		} else if obj.Source.OCIRepository != nil {
+			sourceName = obj.Source.OCIRepository.Template.Name
+			sourceNamespace = obj.Source.OCIRepository.Template.Namespace
+		}
+
+		if obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
 			obj.Kustomization.Template.Spec.SourceRef.Name = sourceName
 		}
-		if sourceNamespace := obj.Source.Template.Namespace; obj.Kustomization.Template.Spec.SourceRef.Namespace == "" && sourceNamespace != "" {
+		if obj.Kustomization.Template.Spec.SourceRef.Namespace == "" && sourceNamespace != "" {
 			obj.Kustomization.Template.Spec.SourceRef.Namespace = sourceNamespace
 		}
 	}
 
 	if namespace := ptr.Deref(obj.Flux.Namespace, ""); namespace != "" {
-		if obj.Source != nil && obj.Source.Template.Namespace == "" {
-			obj.Source.Template.Namespace = namespace
+		if obj.Source != nil {
+			if obj.Source.GitRepository != nil && obj.Source.GitRepository.Template.Namespace == "" {
+				obj.Source.GitRepository.Template.Namespace = namespace
+			}
+			if obj.Source.OCIRepository != nil && obj.Source.OCIRepository.Template.Namespace == "" {
+				obj.Source.OCIRepository.Template.Namespace = namespace
+			}
 		}
 		if obj.Kustomization != nil && obj.Kustomization.Template.Namespace == "" {
 			obj.Kustomization.Template.Namespace = namespace
@@ -68,13 +82,27 @@ func SetDefaults_FluxInstallation(obj *FluxInstallation) {
 }
 
 func SetDefaults_Source(obj *Source) {
-	SetDefaults_Flux_GitRepository(&obj.Template)
+	if obj.GitRepository != nil {
+		SetDefaults_Flux_GitRepository(&obj.GitRepository.Template)
 
-	hasSecretRef := obj.Template.Spec.SecretRef != nil && obj.Template.Spec.SecretRef.Name != ""
-	hasSecretResourceName := ptr.Deref(obj.SecretResourceName, "") != ""
-	if hasSecretResourceName && !hasSecretRef {
-		obj.Template.Spec.SecretRef = &meta.LocalObjectReference{
-			Name: "flux-system",
+		hasSecretRef := obj.GitRepository.Template.Spec.SecretRef != nil && obj.GitRepository.Template.Spec.SecretRef.Name != ""
+		hasSecretResourceName := ptr.Deref(obj.GitRepository.SecretResourceName, "") != ""
+		if hasSecretResourceName && !hasSecretRef {
+			obj.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+				Name: "flux-system",
+			}
+		}
+	}
+
+	if obj.OCIRepository != nil {
+		SetDefaults_Flux_OCIRepository(&obj.OCIRepository.Template)
+
+		hasSecretRef := obj.OCIRepository.Template.Spec.SecretRef != nil && obj.OCIRepository.Template.Spec.SecretRef.Name != ""
+		hasSecretResourceName := ptr.Deref(obj.OCIRepository.SecretResourceName, "") != ""
+		if hasSecretResourceName && !hasSecretRef {
+			obj.OCIRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+				Name: "flux-system",
+			}
 		}
 	}
 }
@@ -84,6 +112,20 @@ func SetDefaults_Kustomization(obj *Kustomization) {
 }
 
 func SetDefaults_Flux_GitRepository(obj *sourcev1.GitRepository) {
+	if obj.Name == "" {
+		obj.Name = defaultGitRepositoryName
+	}
+
+	if obj.Namespace == "" {
+		obj.Namespace = defaultFluxNamespace
+	}
+
+	if obj.Spec.Interval.Duration == 0 {
+		obj.Spec.Interval = metav1.Duration{Duration: time.Minute}
+	}
+}
+
+func SetDefaults_Flux_OCIRepository(obj *sourcev1.OCIRepository) {
 	if obj.Name == "" {
 		obj.Name = defaultGitRepositoryName
 	}
