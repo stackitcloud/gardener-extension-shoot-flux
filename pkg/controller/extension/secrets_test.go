@@ -33,11 +33,13 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 				Namespace: ptr.To("flux-system"),
 			},
 			Source: &fluxv1alpha1.Source{
-				SecretResourceName: ptr.To("source-secret"),
-				Template: sourcev1.GitRepository{
-					Spec: sourcev1.GitRepositorySpec{
-						SecretRef: &fluxmeta.LocalObjectReference{
-							Name: "ssh-target-name",
+				GitRepository: &fluxv1alpha1.GitRepositorySource{
+					SecretResourceName: ptr.To("source-secret"),
+					Template: sourcev1.GitRepository{
+						Spec: sourcev1.GitRepositorySpec{
+							SecretRef: &fluxmeta.LocalObjectReference{
+								Name: "ssh-target-name",
+							},
 						},
 					},
 				},

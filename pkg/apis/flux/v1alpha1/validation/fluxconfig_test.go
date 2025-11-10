@@ -28,12 +28,14 @@ var _ = Describe("FluxConfig validation", func() {
 
 		fluxConfig = &FluxConfig{
 			Source: &Source{
-				Template: sourcev1.GitRepository{
-					Spec: sourcev1.GitRepositorySpec{
-						Reference: &sourcev1.GitRepositoryRef{
-							Branch: "main",
+				GitRepository: &GitRepositorySource{
+					Template: sourcev1.GitRepository{
+						Spec: sourcev1.GitRepositorySpec{
+							Reference: &sourcev1.GitRepositoryRef{
+								Branch: "main",
+							},
+							URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
 						},
-						URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
 					},
 				},
 			},
@@ -108,85 +110,85 @@ var _ = Describe("FluxConfig validation", func() {
 					"Field": Equal("root.source"),
 				}))))
 		})
-		Describe("TypeMeta validation", func() {
+		Describe("Git TypeMeta validation", func() {
 			It("should allow using supported apiVersion and kind", func() {
-				fluxConfig.Source.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
-				fluxConfig.Source.Template.Kind = "GitRepository"
+				fluxConfig.Source.GitRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
+				fluxConfig.Source.GitRepository.Template.Kind = "GitRepository"
 
 				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
 			})
 
 			It("should allow omitting apiVersion and kind", func() {
-				fluxConfig.Source.Template.APIVersion = ""
-				fluxConfig.Source.Template.Kind = ""
+				fluxConfig.Source.GitRepository.Template.APIVersion = ""
+				fluxConfig.Source.GitRepository.Template.Kind = ""
 
 				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
 			})
 
 			It("should deny using unsupported apiVersion", func() {
-				fluxConfig.Source.Template.APIVersion = "source.toolkit.fluxcd.io/v2"
-				fluxConfig.Source.Template.Kind = "GitRepository"
+				fluxConfig.Source.GitRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v2"
+				fluxConfig.Source.GitRepository.Template.Kind = "GitRepository"
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":  Equal(field.ErrorTypeNotSupported),
-						"Field": Equal("root.source.template.apiVersion"),
+						"Field": Equal("root.source.gitRepository.template.apiVersion"),
 					})),
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":  Equal(field.ErrorTypeNotSupported),
-						"Field": Equal("root.source.template.kind"),
+						"Field": Equal("root.source.gitRepository.template.kind"),
 					})),
 				))
 			})
 
 			It("should deny using unsupported kind", func() {
-				fluxConfig.Source.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
-				fluxConfig.Source.Template.Kind = "Bucket"
+				fluxConfig.Source.GitRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
+				fluxConfig.Source.GitRepository.Template.Kind = "Bucket"
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":  Equal(field.ErrorTypeNotSupported),
-						"Field": Equal("root.source.template.apiVersion"),
+						"Field": Equal("root.source.gitRepository.template.apiVersion"),
 					})),
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"Type":  Equal(field.ErrorTypeNotSupported),
-						"Field": Equal("root.source.template.kind"),
+						"Field": Equal("root.source.gitRepository.template.kind"),
 					})),
 				))
 			})
 		})
 
-		Describe("Reference validation", func() {
+		Describe("Git Reference validation", func() {
 			It("should forbid omitting reference", func() {
-				fluxConfig.Source.Template.Spec.Reference = nil
+				fluxConfig.Source.GitRepository.Template.Spec.Reference = nil
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeRequired),
-					"Field": Equal("root.source.template.spec.ref"),
+					"Field": Equal("root.source.gitRepository.template.spec.ref"),
 				}))))
 			})
 
 			It("should forbid specifying empty reference", func() {
-				fluxConfig.Source.Template.Spec.Reference = &sourcev1.GitRepositoryRef{}
+				fluxConfig.Source.GitRepository.Template.Spec.Reference = &sourcev1.GitRepositoryRef{}
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeRequired),
-					"Field": Equal("root.source.template.spec.ref"),
+					"Field": Equal("root.source.gitRepository.template.spec.ref"),
 				}))))
 			})
 
 			It("should allow setting any reference", func() {
 				test := func(mutate func(ref *sourcev1.GitRepositoryRef)) {
-					fluxConfig.Source.Template.Spec.Reference = &sourcev1.GitRepositoryRef{}
-					mutate(fluxConfig.Source.Template.Spec.Reference)
+					fluxConfig.Source.GitRepository.Template.Spec.Reference = &sourcev1.GitRepositoryRef{}
+					mutate(fluxConfig.Source.GitRepository.Template.Spec.Reference)
 
 					ExpectWithOffset(1, ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
 				}
@@ -199,32 +201,32 @@ var _ = Describe("FluxConfig validation", func() {
 			})
 		})
 
-		Describe("URL validation", func() {
+		Describe("Git URL validation", func() {
 			It("should forbid omitting URL", func() {
-				fluxConfig.Source.Template.Spec.URL = ""
+				fluxConfig.Source.GitRepository.Template.Spec.URL = ""
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeRequired),
-					"Field": Equal("root.source.template.spec.url"),
+					"Field": Equal("root.source.gitRepository.template.spec.url"),
 				}))))
 			})
 		})
 
-		Describe("Secret validation", func() {
+		Describe("Git Secret validation", func() {
 			It("should allow omitting both secretRef and secretResourceName", func() {
-				fluxConfig.Source.Template.Spec.SecretRef = nil
-				fluxConfig.Source.SecretResourceName = nil
+				fluxConfig.Source.GitRepository.Template.Spec.SecretRef = nil
+				fluxConfig.Source.GitRepository.SecretResourceName = nil
 
 				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
 			})
 
 			It("should allow specifying both secretRef and secretResourceName", func() {
-				fluxConfig.Source.Template.Spec.SecretRef = &meta.LocalObjectReference{
+				fluxConfig.Source.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
 					Name: "flux-secret",
 				}
-				fluxConfig.Source.SecretResourceName = ptr.To("my-flux-secret")
+				fluxConfig.Source.GitRepository.SecretResourceName = ptr.To("my-flux-secret")
 				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
 					Name: "my-flux-secret",
 					ResourceRef: autoscalingv1.CrossVersionObjectReference{
@@ -236,10 +238,10 @@ var _ = Describe("FluxConfig validation", func() {
 			})
 
 			It("should deny specifying a secretResourceName without a matching resource", func() {
-				fluxConfig.Source.Template.Spec.SecretRef = &meta.LocalObjectReference{
+				fluxConfig.Source.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
 					Name: "flux-secret",
 				}
-				fluxConfig.Source.SecretResourceName = ptr.To("my-flux-secret")
+				fluxConfig.Source.GitRepository.SecretResourceName = ptr.To("my-flux-secret")
 				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
 					Name: "my-other-secret",
 				}}
@@ -248,13 +250,13 @@ var _ = Describe("FluxConfig validation", func() {
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeInvalid),
-					"Field": Equal("root.source.secretResourceName"),
+					"Field": Equal("root.source.gitRepository.secretResourceName"),
 				}))))
 			})
 
 			It("should deny omitting secretRef if secretResourceName is set", func() {
-				fluxConfig.Source.Template.Spec.SecretRef = nil
-				fluxConfig.Source.SecretResourceName = ptr.To("my-flux-secret")
+				fluxConfig.Source.GitRepository.Template.Spec.SecretRef = nil
+				fluxConfig.Source.GitRepository.SecretResourceName = ptr.To("my-flux-secret")
 				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
 					Name: "my-flux-secret",
 					ResourceRef: autoscalingv1.CrossVersionObjectReference{
@@ -266,21 +268,318 @@ var _ = Describe("FluxConfig validation", func() {
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeRequired),
-					"Field": Equal("root.source.template.spec.secretRef"),
+					"Field": Equal("root.source.gitRepository.template.spec.secretRef"),
 				}))))
 			})
 
 			It("should deny omitting secretResourceName if secretRef is set", func() {
-				fluxConfig.Source.Template.Spec.SecretRef = &meta.LocalObjectReference{
+				fluxConfig.Source.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
 					Name: "flux-secret",
 				}
-				fluxConfig.Source.SecretResourceName = nil
+				fluxConfig.Source.GitRepository.SecretResourceName = nil
 
 				Expect(
 					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
 				).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeRequired),
-					"Field": Equal("root.source.secretResourceName"),
+					"Field": Equal("root.source.gitRepository.secretResourceName"),
+				}))))
+			})
+		})
+
+		Describe("Source mutex validation", func() {
+			It("should deny having both GitRepository and OCIRepository set", func() {
+				fluxConfig.Source.OCIRepository = &OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+						},
+					},
+				}
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeInvalid),
+					"Field": Equal("root.source"),
+				}))))
+			})
+
+			It("should deny having neither GitRepository nor OCIRepository set", func() {
+				fluxConfig.Source.GitRepository = nil
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeRequired),
+					"Field": Equal("root.source"),
+				}))))
+			})
+		})
+
+		Describe("OCI TypeMeta validation", func() {
+			BeforeEach(func() {
+				// Switch to OCI repository for these tests
+				fluxConfig.Source = &Source{
+					OCIRepository: &OCIRepositorySource{
+						Template: sourcev1.OCIRepository{
+							Spec: sourcev1.OCIRepositorySpec{
+								URL: "oci://ghcr.io/example/manifests",
+								Reference: &sourcev1.OCIRepositoryRef{
+									Tag: "v1.0.0",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should allow using supported apiVersion and kind", func() {
+				fluxConfig.Source.OCIRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
+				fluxConfig.Source.OCIRepository.Template.Kind = "OCIRepository"
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should allow omitting apiVersion and kind", func() {
+				fluxConfig.Source.OCIRepository.Template.APIVersion = ""
+				fluxConfig.Source.OCIRepository.Template.Kind = ""
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should deny using unsupported apiVersion", func() {
+				fluxConfig.Source.OCIRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v2"
+				fluxConfig.Source.OCIRepository.Template.Kind = "OCIRepository"
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ConsistOf(
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":  Equal(field.ErrorTypeNotSupported),
+						"Field": Equal("root.source.ociRepository.template.apiVersion"),
+					})),
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":  Equal(field.ErrorTypeNotSupported),
+						"Field": Equal("root.source.ociRepository.template.kind"),
+					})),
+				))
+			})
+
+			It("should deny using unsupported kind", func() {
+				fluxConfig.Source.OCIRepository.Template.APIVersion = "source.toolkit.fluxcd.io/v1"
+				fluxConfig.Source.OCIRepository.Template.Kind = "GitRepository"
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ConsistOf(
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":  Equal(field.ErrorTypeNotSupported),
+						"Field": Equal("root.source.ociRepository.template.apiVersion"),
+					})),
+					PointTo(MatchFields(IgnoreExtras, Fields{
+						"Type":  Equal(field.ErrorTypeNotSupported),
+						"Field": Equal("root.source.ociRepository.template.kind"),
+					})),
+				))
+			})
+		})
+
+		Describe("OCI Reference validation", func() {
+			BeforeEach(func() {
+				fluxConfig.Source = &Source{
+					OCIRepository: &OCIRepositorySource{
+						Template: sourcev1.OCIRepository{
+							Spec: sourcev1.OCIRepositorySpec{
+								URL: "oci://ghcr.io/example/manifests",
+								Reference: &sourcev1.OCIRepositoryRef{
+									Tag: "v1.0.0",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should forbid omitting reference", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.Reference = nil
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeRequired),
+					"Field": Equal("root.source.ociRepository.template.spec.ref"),
+				}))))
+			})
+
+			It("should forbid specifying empty reference", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{}
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeInvalid),
+					"Field": Equal("root.source.ociRepository.template.spec.ref"),
+				}))))
+			})
+
+			It("should allow setting tag reference", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{
+					Tag: "latest",
+				}
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should allow setting semver reference", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{
+					SemVer: ">= 1.0.0",
+				}
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should allow setting digest reference", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{
+					Digest: "sha256:abcd1234",
+				}
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+		})
+
+		Describe("OCI URL validation", func() {
+			BeforeEach(func() {
+				fluxConfig.Source = &Source{
+					OCIRepository: &OCIRepositorySource{
+						Template: sourcev1.OCIRepository{
+							Spec: sourcev1.OCIRepositorySpec{
+								URL: "oci://ghcr.io/example/manifests",
+								Reference: &sourcev1.OCIRepositoryRef{
+									Tag: "v1.0.0",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should forbid omitting URL", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.URL = ""
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeRequired),
+					"Field": Equal("root.source.ociRepository.template.spec.url"),
+				}))))
+			})
+
+			It("should forbid non-OCI URL format", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.URL = "https://github.com/example/repo"
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeInvalid),
+					"Field": Equal("root.source.ociRepository.template.spec.url"),
+				}))))
+			})
+
+			It("should allow OCI URL format", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.URL = "oci://ghcr.io/example/manifests"
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+		})
+
+		Describe("OCI Secret validation", func() {
+			BeforeEach(func() {
+				fluxConfig.Source = &Source{
+					OCIRepository: &OCIRepositorySource{
+						Template: sourcev1.OCIRepository{
+							Spec: sourcev1.OCIRepositorySpec{
+								URL: "oci://ghcr.io/example/manifests",
+								Reference: &sourcev1.OCIRepositoryRef{
+									Tag: "v1.0.0",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should allow omitting both secretRef and secretResourceName", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.SecretRef = nil
+				fluxConfig.Source.OCIRepository.SecretResourceName = nil
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should allow specifying both secretRef and secretResourceName", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+					Name: "oci-secret",
+				}
+				fluxConfig.Source.OCIRepository.SecretResourceName = ptr.To("my-oci-secret")
+				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
+					Name: "my-oci-secret",
+					ResourceRef: autoscalingv1.CrossVersionObjectReference{
+						Kind: "Secret",
+					},
+				}}
+
+				Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+			})
+
+			It("should deny specifying a secretResourceName without a matching resource", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+					Name: "oci-secret",
+				}
+				fluxConfig.Source.OCIRepository.SecretResourceName = ptr.To("my-oci-secret")
+				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
+					Name: "my-other-secret",
+				}}
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeInvalid),
+					"Field": Equal("root.source.ociRepository.secretResourceName"),
+				}))))
+			})
+
+			It("should deny omitting secretRef if secretResourceName is set", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.SecretRef = nil
+				fluxConfig.Source.OCIRepository.SecretResourceName = ptr.To("my-oci-secret")
+				shoot.Spec.Resources = []gardencorev1beta1.NamedResourceReference{{
+					Name: "my-oci-secret",
+					ResourceRef: autoscalingv1.CrossVersionObjectReference{
+						Kind: "Secret",
+					},
+				}}
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeRequired),
+					"Field": Equal("root.source.ociRepository.template.spec.secretRef"),
+				}))))
+			})
+
+			It("should deny omitting secretResourceName if secretRef is set", func() {
+				fluxConfig.Source.OCIRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+					Name: "oci-secret",
+				}
+				fluxConfig.Source.OCIRepository.SecretResourceName = nil
+
+				Expect(
+					ValidateFluxConfig(fluxConfig, shoot, rootFldPath),
+				).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeRequired),
+					"Field": Equal("root.source.ociRepository.secretResourceName"),
 				}))))
 			})
 		})

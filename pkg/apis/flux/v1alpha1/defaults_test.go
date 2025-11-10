@@ -18,12 +18,14 @@ var _ = Describe("FluxConfig defaulting", func() {
 	BeforeEach(func() {
 		obj = &FluxConfig{
 			Source: &Source{
-				Template: sourcev1.GitRepository{
-					Spec: sourcev1.GitRepositorySpec{
-						Reference: &sourcev1.GitRepositoryRef{
-							Branch: "main",
+				GitRepository: &GitRepositorySource{
+					Template: sourcev1.GitRepository{
+						Spec: sourcev1.GitRepositorySpec{
+							Reference: &sourcev1.GitRepositoryRef{
+								Branch: "main",
+							},
+							URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
 						},
-						URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
 					},
 				},
 			},
@@ -42,9 +44,9 @@ var _ = Describe("FluxConfig defaulting", func() {
 
 		SetObjectDefaults_FluxConfig(obj)
 
-		Expect(obj.Source.Template.Spec.Reference).To(DeepEqual(before.Source.Template.Spec.Reference))
-		Expect(obj.Source.Template.Spec.URL).To(DeepEqual(before.Source.Template.Spec.URL))
-		Expect(obj.Source.Template.Spec.URL).To(DeepEqual(before.Source.Template.Spec.URL))
+		Expect(obj.Source.GitRepository.Template.Spec.Reference).To(DeepEqual(before.Source.GitRepository.Template.Spec.Reference))
+		Expect(obj.Source.GitRepository.Template.Spec.URL).To(DeepEqual(before.Source.GitRepository.Template.Spec.URL))
+		Expect(obj.Source.GitRepository.Template.Spec.URL).To(DeepEqual(before.Source.GitRepository.Template.Spec.URL))
 		Expect(obj.Kustomization.Template.Spec.Path).To(DeepEqual(before.Kustomization.Template.Spec.Path))
 	})
 
@@ -61,39 +63,125 @@ var _ = Describe("FluxConfig defaulting", func() {
 	})
 
 	Describe("Source defaulting", func() {
-		It("should default all standard fields", func() {
+		It("should default all standard fields for GitRepository", func() {
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Name).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Namespace).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Spec.Interval.Duration).To(Equal(time.Minute))
+			Expect(obj.Source.GitRepository.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.GitRepository.Template.Namespace).To(Equal("flux-system"))
+			Expect(obj.Source.GitRepository.Template.Spec.Interval.Duration).To(Equal(time.Minute))
 		})
 
 		It("should default secretRef.name to flux-system if secretResourceName is set", func() {
-			obj.Source.SecretResourceName = ptr.To("my-flux-secret")
+			obj.Source.GitRepository.SecretResourceName = ptr.To("my-flux-secret")
 
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Spec.SecretRef).NotTo(BeNil())
-			Expect(obj.Source.Template.Spec.SecretRef.Name).To(Equal("flux-system"))
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef.Name).To(Equal("flux-system"))
 		})
 
 		It("should not overwrite secretRef.name if secretResourceName is set", func() {
-			obj.Source.Template.Spec.SecretRef = &meta.LocalObjectReference{Name: "flux-secret"}
-			obj.Source.SecretResourceName = ptr.To("my-flux-secret")
+			obj.Source.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{Name: "flux-secret"}
+			obj.Source.GitRepository.SecretResourceName = ptr.To("my-flux-secret")
 
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Spec.SecretRef).NotTo(BeNil())
-			Expect(obj.Source.Template.Spec.SecretRef.Name).To(Equal("flux-secret"))
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef.Name).To(Equal("flux-secret"))
 		})
 
 		It("should handle if the kustomization is omitted", func() {
 			obj.Kustomization = nil
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Name).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Namespace).To(Equal("flux-system"))
+			Expect(obj.Source.GitRepository.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.GitRepository.Template.Namespace).To(Equal("flux-system"))
+		})
+
+		It("should default all standard fields for OCIRepository", func() {
+			// Switch to OCI repository
+			obj.Source = &Source{
+				OCIRepository: &OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+						},
+					},
+				},
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Source.OCIRepository.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.OCIRepository.Template.Namespace).To(Equal("flux-system"))
+			Expect(obj.Source.OCIRepository.Template.Spec.Interval.Duration).To(Equal(time.Minute))
+		})
+
+		It("should default secretRef.name to flux-system for OCIRepository if secretResourceName is set", func() {
+			obj.Source = &Source{
+				OCIRepository: &OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+						},
+					},
+					SecretResourceName: ptr.To("my-oci-secret"),
+				},
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Source.OCIRepository.Template.Spec.SecretRef).NotTo(BeNil())
+			Expect(obj.Source.OCIRepository.Template.Spec.SecretRef.Name).To(Equal("flux-system"))
+		})
+
+		It("should not overwrite secretRef.name for OCIRepository if secretResourceName is set", func() {
+			obj.Source = &Source{
+				OCIRepository: &OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+							SecretRef: &meta.LocalObjectReference{Name: "oci-secret"},
+						},
+					},
+					SecretResourceName: ptr.To("my-oci-secret"),
+				},
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Source.OCIRepository.Template.Spec.SecretRef).NotTo(BeNil())
+			Expect(obj.Source.OCIRepository.Template.Spec.SecretRef.Name).To(Equal("oci-secret"))
+		})
+
+		It("should handle OCIRepository when kustomization is omitted", func() {
+			obj.Source = &Source{
+				OCIRepository: &OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+						},
+					},
+				},
+			}
+			obj.Kustomization = nil
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Source.OCIRepository.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.OCIRepository.Template.Namespace).To(Equal("flux-system"))
 		})
 	})
 

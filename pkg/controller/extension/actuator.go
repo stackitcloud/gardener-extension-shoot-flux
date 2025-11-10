@@ -328,7 +328,7 @@ func buildFluxInstallOptions(config *fluxv1alpha1.FluxInstallation) fluxinstall.
 	return options
 }
 
-// BootstrapSource creates the GitRepository object specified in the given config and waits for it to get ready.
+// BootstrapSource creates the source object (GitRepository or OCIRepository) specified in the given config and waits for it to get ready.
 func BootstrapSource(
 	ctx context.Context,
 	log logr.Logger,
@@ -343,6 +343,33 @@ func bootstrapSource(
 	log logr.Logger,
 	shootClient client.Client,
 	config *fluxv1alpha1.Source,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
+	// Validate that exactly one source type is set
+	if config.GitRepository == nil && config.OCIRepository == nil {
+		return fmt.Errorf("invalid source configuration: neither gitRepository nor ociRepository is set")
+	}
+	if config.GitRepository != nil && config.OCIRepository != nil {
+		return fmt.Errorf("invalid source configuration: both gitRepository and ociRepository are set")
+	}
+
+	// Route to appropriate bootstrap function
+	if config.GitRepository != nil {
+		return bootstrapGitRepository(ctx, log, shootClient, config.GitRepository, interval, timeout)
+	}
+	if config.OCIRepository != nil {
+		return bootstrapOCIRepository(ctx, log, shootClient, config.OCIRepository, interval, timeout)
+	}
+
+	return fmt.Errorf("invalid source configuration")
+}
+
+func bootstrapGitRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	config *fluxv1alpha1.GitRepositorySource,
 	interval time.Duration,
 	timeout time.Duration,
 ) error {
@@ -369,6 +396,41 @@ func bootstrapSource(
 	}
 
 	log.Info("Successfully bootstrapped Flux GitRepository")
+
+	return nil
+}
+
+func bootstrapOCIRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	config *fluxv1alpha1.OCIRepositorySource,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
+	log.Info("Bootstrapping Flux OCIRepository")
+
+	// Create Namespace in case the OCIRepository is located in a different namespace than the Flux components.
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
+	if err := shootClient.Create(ctx, namespace); client.IgnoreAlreadyExists(err) != nil {
+		return fmt.Errorf("error creating %s namespace: %w", config.Template.Namespace, err)
+	}
+
+	// Create OCIRepository
+	ociRepository := config.Template.DeepCopy()
+	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, ociRepository, func() error {
+		config.Template.Spec.DeepCopyInto(&ociRepository.Spec)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("error applying OCIRepository template: %w", err)
+	}
+
+	log.Info("Waiting for OCIRepository to get ready")
+	if err := WaitForObject(ctx, shootClient, ociRepository, interval, timeout, CheckFluxObject(ociRepository)); err != nil {
+		return fmt.Errorf("error waiting for OCIRepository to get ready: %w", err)
+	}
+
+	log.Info("Successfully bootstrapped Flux OCIRepository")
 
 	return nil
 }

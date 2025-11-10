@@ -211,6 +211,57 @@ See <a href="https://fluxcd.io/flux/installation/configuration/optional-componen
 </tr>
 </tbody>
 </table>
+<h3 id="flux.extensions.gardener.cloud/v1alpha1.GitRepositorySource">GitRepositorySource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.Source">Source</a>)
+</p>
+<p>
+<p>GitRepositorySource configures a GitRepository source for bootstrapping.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>template</code></br>
+<em>
+<a href="https://fluxcd.io/flux/components/source/api/v1/#source.toolkit.fluxcd.io/v1.GitRepository">
+source.toolkit.fluxcd.io/v1.GitRepository
+</a>
+</em>
+</td>
+<td>
+<p>Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
+Required fields: spec.ref.*, spec.url.
+The following defaults are applied to omitted fields:
+- metadata.name is defaulted to &ldquo;flux-system&rdquo;
+- metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
+- spec.interval is defaulted to &ldquo;1m&rdquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretResourceName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretResourceName references a resource under Shoot.spec.resources.
+The secret data from this resource is used to create the GitRepository&rsquo;s credentials secret
+(GitRepository.spec.secretRef.name) if specified in Template.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="flux.extensions.gardener.cloud/v1alpha1.Kustomization">Kustomization
 </h3>
 <p>
@@ -248,14 +299,14 @@ The following defaults are applied to omitted field:
 </tr>
 </tbody>
 </table>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.Source">Source
+<h3 id="flux.extensions.gardener.cloud/v1alpha1.OCIRepositorySource">OCIRepositorySource
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+<a href="#flux.extensions.gardener.cloud/v1alpha1.Source">Source</a>)
 </p>
 <p>
-<p>Source configures how to bootstrap a Flux source object.</p>
+<p>OCIRepositorySource configures an OCIRepository source for bootstrapping.</p>
 </p>
 <table>
 <thead>
@@ -269,15 +320,15 @@ The following defaults are applied to omitted field:
 <td>
 <code>template</code></br>
 <em>
-<a href="https://fluxcd.io/flux/components/source/api/v1/#source.toolkit.fluxcd.io/v1.GitRepository">
-source.toolkit.fluxcd.io/v1.GitRepository
+<a href="https://fluxcd.io/flux/components/source/api/v1/#source.toolkit.fluxcd.io/v1.OCIRepository">
+source.toolkit.fluxcd.io/v1.OCIRepository
 </a>
 </em>
 </td>
 <td>
-<p>Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
-Required fields: spec.ref.*, spec.url.
-The following defaults are applied to omitted field:
+<p>Template is a partial OCIRepository object in API version source.toolkit.fluxcd.io/v1.
+Required fields: spec.ref, spec.url.
+The following defaults are applied to omitted fields:
 - metadata.name is defaulted to &ldquo;flux-system&rdquo;
 - metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
 - spec.interval is defaulted to &ldquo;1m&rdquo;</p>
@@ -293,8 +344,56 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretResourceName references a resource under Shoot.spec.resources.
-The secret data from this resource is used to create the GitRepository&rsquo;s credentials secret
-(GitRepository.spec.secretRef.name) if specified in Template.</p>
+The secret data from this resource is used to create the OCIRepository&rsquo;s credentials secret
+(OCIRepository.spec.secretRef.name) if specified in Template.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="flux.extensions.gardener.cloud/v1alpha1.Source">Source
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+</p>
+<p>
+<p>Source configures how to bootstrap a Flux source object.
+Exactly one of GitRepository or OCIRepository must be set.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>gitRepository</code></br>
+<em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.GitRepositorySource">
+GitRepositorySource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GitRepository configures a GitRepository source.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ociRepository</code></br>
+<em>
+<a href="#flux.extensions.gardener.cloud/v1alpha1.OCIRepositorySource">
+OCIRepositorySource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OCIRepository configures an OCIRepository source.</p>
 </td>
 </tr>
 </tbody>

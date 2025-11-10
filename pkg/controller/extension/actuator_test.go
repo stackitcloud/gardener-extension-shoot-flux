@@ -117,43 +117,150 @@ var _ = Describe("BootstrapSource", func() {
 		shootClient client.Client
 		config      *fluxv1alpha1.Source
 	)
-	BeforeEach(func() {
-		shootClient = newShootClient()
-		config = &fluxv1alpha1.Source{
-			Template: sourcev1.GitRepository{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gitrepo",
-					Namespace: "custom-namespace",
+
+	Context("with GitRepository", func() {
+		BeforeEach(func() {
+			shootClient = newShootClient()
+			config = &fluxv1alpha1.Source{
+				GitRepository: &fluxv1alpha1.GitRepositorySource{
+					Template: sourcev1.GitRepository{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "gitrepo",
+							Namespace: "custom-namespace",
+						},
+						Spec: sourcev1.GitRepositorySpec{
+							URL: "http://example.com",
+							Reference: &sourcev1.GitRepositoryRef{
+								Branch: "main",
+							},
+						},
+					},
 				},
-				Spec: sourcev1.GitRepositorySpec{
-					URL: "http://example.com",
-				},
-			},
-		}
-	})
-	It("should succesfully apply and wait for readiness", func() {
-		done := testAsync(func() {
-			Expect(
-				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(Succeed())
+			}
 		})
-		repo := config.Template.DeepCopy()
-		Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
-		Eventually(done).Should(BeClosed())
 
-		createdRepo := &sourcev1.GitRepository{}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo))
-		Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
+		It("should successfully apply and wait for readiness", func() {
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := config.GitRepository.Template.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
 
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+			createdRepo := &sourcev1.GitRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
+
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.GitRepository.Template.Namespace}}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+		})
+
+		It("should fail if the resources do not get ready", func() {
+			Eventually(testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(MatchError(ContainSubstring("error waiting for GitRepository to get ready")))
+			})).Should(BeClosed())
+		})
 	})
-	It("should fail if the resources do not get ready", func() {
-		Eventually(testAsync(func() {
+
+	Context("with OCIRepository", func() {
+		BeforeEach(func() {
+			shootClient = newShootClient()
+			config = &fluxv1alpha1.Source{
+				OCIRepository: &fluxv1alpha1.OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "ocirepository",
+							Namespace: "custom-namespace",
+						},
+						Spec: sourcev1.OCIRepositorySpec{
+							URL: "oci://ghcr.io/example/manifests",
+							Reference: &sourcev1.OCIRepositoryRef{
+								Tag: "v1.0.0",
+							},
+						},
+					},
+				},
+			}
+		})
+
+		It("should successfully apply and wait for readiness", func() {
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := config.OCIRepository.Template.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
+
+			createdRepo := &sourcev1.OCIRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.URL).To(Equal("oci://ghcr.io/example/manifests"))
+			Expect(createdRepo.Spec.Reference.Tag).To(Equal("v1.0.0"))
+
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.OCIRepository.Template.Namespace}}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+		})
+
+		It("should fail if the resources do not get ready", func() {
+			Eventually(testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(MatchError(ContainSubstring("error waiting for OCIRepository to get ready")))
+			})).Should(BeClosed())
+		})
+
+		It("should handle OCI with semver reference", func() {
+			config.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{
+				SemVer: ">= 1.0.0",
+			}
+
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := config.OCIRepository.Template.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
+
+			createdRepo := &sourcev1.OCIRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.Reference.SemVer).To(Equal(">= 1.0.0"))
+		})
+	})
+
+	Context("with invalid source", func() {
+		It("should fail when both GitRepository and OCIRepository are set", func() {
+			config = &fluxv1alpha1.Source{
+				GitRepository: &fluxv1alpha1.GitRepositorySource{
+					Template: sourcev1.GitRepository{
+						ObjectMeta: metav1.ObjectMeta{Name: "git", Namespace: "test"},
+					},
+				},
+				OCIRepository: &fluxv1alpha1.OCIRepositorySource{
+					Template: sourcev1.OCIRepository{
+						ObjectMeta: metav1.ObjectMeta{Name: "oci", Namespace: "test"},
+					},
+				},
+			}
+
 			Expect(
 				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(MatchError(ContainSubstring("error waiting for GitRepository to get ready")))
-		})).Should(BeClosed())
+			).To(MatchError(ContainSubstring("invalid source configuration")))
+		})
+
+		It("should fail when neither GitRepository nor OCIRepository are set", func() {
+			config = &fluxv1alpha1.Source{}
+
+			Expect(
+				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+			).To(MatchError(ContainSubstring("invalid source configuration")))
+		})
 	})
 })
 

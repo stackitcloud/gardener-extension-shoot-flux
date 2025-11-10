@@ -14,21 +14,38 @@ spec:
       namespace: flux-system
       # components: ["helm-controller", "kustomize-controller", "source-controller"]
       componentsExtra:
-      - source-watcher
+        - source-watcher
     # additionalSecretResources:
     #   - name: shoot-vault-secret
     #     targetName: vault
     source:
-      # secretResourceName: flux-ssh-secret
-      template:
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: GitRepository
-        spec:
-          ref:
-            branch: main
-          # secretRef:
-          #  name: flux-system
-          url: https://github.com/fluxcd/flux2-kustomize-helm-example
+      gitRepository:
+        template:
+          apiVersion: source.toolkit.fluxcd.io/v1
+          kind: GitRepository
+          spec:
+            ref:
+              branch: main
+            # secretRef:
+            #  name: flux-system
+            url: https://github.com/fluxcd/flux2-kustomize-helm-example
+        # secretResourceName: flux-ssh-secret
+
+      # Alternatively, use an OCI repository:
+      # ociRepository:
+      #   template:
+      #     apiVersion: source.toolkit.fluxcd.io/v1
+      #     kind: OCIRepository
+      #     spec:
+      #       url: oci://ghcr.io/example/manifests
+      #       ref:
+      #         semver: '>= 1.0.0'
+      #         # or use tag: v1.0.0
+      #         # or use digest: sha256:abcd1234...
+      #       interval: 10m
+      #     # secretRef:
+      #     #   name: flux-system
+      #   # secretResourceName: oci-credentials
     kustomization:
       template:
         apiVersion: kustomize.toolkit.fluxcd.io/v1

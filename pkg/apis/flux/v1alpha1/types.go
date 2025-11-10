@@ -72,10 +72,21 @@ type FluxInstallation struct {
 }
 
 // Source configures how to bootstrap a Flux source object.
+// Exactly one of GitRepository or OCIRepository must be set.
 type Source struct {
+	// GitRepository configures a GitRepository source.
+	// +optional
+	GitRepository *GitRepositorySource `json:"gitRepository,omitempty"`
+	// OCIRepository configures an OCIRepository source.
+	// +optional
+	OCIRepository *OCIRepositorySource `json:"ociRepository,omitempty"`
+}
+
+// GitRepositorySource configures a GitRepository source for bootstrapping.
+type GitRepositorySource struct {
 	// Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
 	// Required fields: spec.ref.*, spec.url.
-	// The following defaults are applied to omitted field:
+	// The following defaults are applied to omitted fields:
 	// - metadata.name is defaulted to "flux-system"
 	// - metadata.namespace is defaulted to "flux-system"
 	// - spec.interval is defaulted to "1m"
@@ -83,6 +94,22 @@ type Source struct {
 	// SecretResourceName references a resource under Shoot.spec.resources.
 	// The secret data from this resource is used to create the GitRepository's credentials secret
 	// (GitRepository.spec.secretRef.name) if specified in Template.
+	// +optional
+	SecretResourceName *string `json:"secretResourceName,omitempty"`
+}
+
+// OCIRepositorySource configures an OCIRepository source for bootstrapping.
+type OCIRepositorySource struct {
+	// Template is a partial OCIRepository object in API version source.toolkit.fluxcd.io/v1.
+	// Required fields: spec.ref, spec.url.
+	// The following defaults are applied to omitted fields:
+	// - metadata.name is defaulted to "flux-system"
+	// - metadata.namespace is defaulted to "flux-system"
+	// - spec.interval is defaulted to "1m"
+	Template sourcev1.OCIRepository `json:"template"`
+	// SecretResourceName references a resource under Shoot.spec.resources.
+	// The secret data from this resource is used to create the OCIRepository's credentials secret
+	// (OCIRepository.spec.secretRef.name) if specified in Template.
 	// +optional
 	SecretResourceName *string `json:"secretResourceName,omitempty"`
 }

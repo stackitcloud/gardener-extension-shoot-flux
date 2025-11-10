@@ -37,11 +37,21 @@ func ReconcileSecrets(
 	secretsToKeep := sets.Set[string]{}
 
 	secretResources := config.AdditionalSecretResources
-	if config.Source != nil && config.Source.SecretResourceName != nil {
-		secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
-			Name:       *config.Source.SecretResourceName,
-			TargetName: ptr.To(config.Source.Template.Spec.SecretRef.Name),
-		})
+	if config.Source != nil {
+		// Add Git repository secret if configured
+		if config.Source.GitRepository != nil && config.Source.GitRepository.SecretResourceName != nil {
+			secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
+				Name:       *config.Source.GitRepository.SecretResourceName,
+				TargetName: ptr.To(config.Source.GitRepository.Template.Spec.SecretRef.Name),
+			})
+		}
+		// Add OCI repository secret if configured
+		if config.Source.OCIRepository != nil && config.Source.OCIRepository.SecretResourceName != nil {
+			secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
+				Name:       *config.Source.OCIRepository.SecretResourceName,
+				TargetName: ptr.To(config.Source.OCIRepository.Template.Spec.SecretRef.Name),
+			})
+		}
 	}
 	for _, resource := range secretResources {
 		name, err := copySecretToShoot(ctx, log, seedClient, shootClient, seedNamespace, shootNamespace, resources, resource)

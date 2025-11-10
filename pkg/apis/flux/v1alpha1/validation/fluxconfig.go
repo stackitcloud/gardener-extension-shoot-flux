@@ -2,6 +2,7 @@ package validation
 
 import (
 	"slices"
+	"strings"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
@@ -68,9 +69,33 @@ func ValidateFluxInstallation(fluxInstallation *fluxv1alpha1.FluxInstallation, f
 }
 
 var supportedGitRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.GitRepositoryKind)
+var supportedOCIRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepositoryKind)
 
 // ValidateSource validates a Source object.
 func ValidateSource(source *fluxv1alpha1.Source, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Check mutex: exactly one source type must be set
+	if source.GitRepository == nil && source.OCIRepository == nil {
+		allErrs = append(allErrs, field.Required(fldPath, "must specify either gitRepository or ociRepository"))
+	}
+	if source.GitRepository != nil && source.OCIRepository != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath, source, "cannot specify both gitRepository and ociRepository"))
+	}
+
+	// Validate specific source type
+	if source.GitRepository != nil {
+		allErrs = append(allErrs, ValidateGitRepositorySource(source.GitRepository, shoot, fldPath.Child("gitRepository"))...)
+	}
+	if source.OCIRepository != nil {
+		allErrs = append(allErrs, ValidateOCIRepositorySource(source.OCIRepository, shoot, fldPath.Child("ociRepository"))...)
+	}
+
+	return allErrs
+}
+
+// ValidateGitRepositorySource validates a GitRepositorySource object.
+func ValidateGitRepositorySource(source *fluxv1alpha1.GitRepositorySource, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	template := source.Template
@@ -88,6 +113,53 @@ func ValidateSource(source *fluxv1alpha1.Source, shoot *gardencorev1beta1.Shoot,
 
 	if template.Spec.URL == "" {
 		allErrs = append(allErrs, field.Required(specPath.Child("url"), "GitRepository must have an URL"))
+	}
+
+	hasSecretRef := template.Spec.SecretRef != nil && template.Spec.SecretRef.Name != ""
+	hasSecretResourceName := ptr.Deref(source.SecretResourceName, "") != ""
+	secretRefPath := specPath.Child("secretRef")
+	secretResourceNamePath := fldPath.Child("secretResourceName")
+
+	if hasSecretRef && !hasSecretResourceName {
+		allErrs = append(allErrs, field.Required(secretResourceNamePath, "must specify a secret resource name if "+secretRefPath.String()+" is specified"))
+	}
+	if !hasSecretRef && hasSecretResourceName {
+		allErrs = append(allErrs, field.Required(secretRefPath, "must specify a secret ref if "+secretResourceNamePath.String()+" is specified"))
+	}
+
+	if hasSecretResourceName {
+		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *source.SecretResourceName)...)
+	}
+
+	return allErrs
+}
+
+// ValidateOCIRepositorySource validates an OCIRepositorySource object.
+func ValidateOCIRepositorySource(source *fluxv1alpha1.OCIRepositorySource, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	template := source.Template
+	templatePath := fldPath.Child("template")
+
+	if gvk := template.GroupVersionKind(); !gvk.Empty() && gvk != supportedOCIRepositoryGVK {
+		allErrs = append(allErrs, field.NotSupported(templatePath.Child("apiVersion"), template.APIVersion, []string{supportedOCIRepositoryGVK.GroupVersion().String()}))
+		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), template.APIVersion, []string{supportedOCIRepositoryGVK.Kind}))
+	}
+
+	specPath := templatePath.Child("spec")
+
+	// Validate URL
+	if template.Spec.URL == "" {
+		allErrs = append(allErrs, field.Required(specPath.Child("url"), "OCIRepository must have a URL"))
+	} else if !strings.HasPrefix(template.Spec.URL, "oci://") {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("url"), template.Spec.URL, "must start with oci://"))
+	}
+
+	// Validate reference
+	if ref := template.Spec.Reference; ref == nil {
+		allErrs = append(allErrs, field.Required(specPath.Child("ref"), "OCIRepository must have a reference"))
+	} else if ref.Tag == "" && ref.SemVer == "" && ref.Digest == "" {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("ref"), ref, "must specify tag, semver, or digest"))
 	}
 
 	hasSecretRef := template.Spec.SecretRef != nil && template.Spec.SecretRef.Name != ""
