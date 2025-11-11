@@ -82,6 +82,18 @@ func SetDefaults_FluxInstallation(obj *FluxInstallation) {
 }
 
 func SetDefaults_Source(obj *Source) {
+	// Migrate deprecated fields to new structure for backwards compatibility
+	if obj.Template != nil && obj.GitRepository == nil && obj.OCIRepository == nil {
+		// Old format detected, migrate to new format
+		obj.GitRepository = &GitRepositorySource{
+			Template:           *obj.Template,
+			SecretResourceName: obj.SecretResourceName,
+		}
+		// Clear deprecated fields after migration
+		obj.Template = nil
+		obj.SecretResourceName = nil
+	}
+
 	if obj.GitRepository != nil {
 		SetDefaults_Flux_GitRepository(&obj.GitRepository.Template)
 
