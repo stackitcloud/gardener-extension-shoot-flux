@@ -72,7 +72,15 @@ type FluxInstallation struct {
 }
 
 // Source configures how to bootstrap a Flux source object.
-// Exactly one of GitRepository or OCIRepository must be set.
+// For new configurations, use either GitRepository or OCIRepository.
+//
+// MIGRATION: Old configurations using 'template' and 'secretResourceName' fields
+// are automatically migrated to the new 'gitRepository' format during API processing.
+// The old fields will be cleared after migration. Users should update their configs
+// to use the new structure:
+//
+//	Old:  source: { template: {...}, secretResourceName: "..." }
+//	New:  source: { gitRepository: { template: {...}, secretResourceName: "..." } }
 type Source struct {
 	// GitRepository configures a GitRepository source.
 	// +optional
@@ -80,6 +88,17 @@ type Source struct {
 	// OCIRepository configures an OCIRepository source.
 	// +optional
 	OCIRepository *OCIRepositorySource `json:"ociRepository,omitempty"`
+
+	// DEPRECATED: Use GitRepository.Template instead.
+	// Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
+	// This field is automatically migrated to GitRepository.Template during defaulting.
+	// +optional
+	Template *sourcev1.GitRepository `json:"template,omitempty"`
+	// DEPRECATED: Use GitRepository.SecretResourceName instead.
+	// SecretResourceName references a resource under Shoot.spec.resources.
+	// This field is automatically migrated to GitRepository.SecretResourceName during defaulting.
+	// +optional
+	SecretResourceName *string `json:"secretResourceName,omitempty"`
 }
 
 // GitRepositorySource configures a GitRepository source for bootstrapping.

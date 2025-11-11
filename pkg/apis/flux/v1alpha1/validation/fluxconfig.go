@@ -75,6 +75,27 @@ var supportedOCIRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepos
 func ValidateSource(source *fluxv1alpha1.Source, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	// Check for old format (deprecated but still supported)
+	hasOldFormat := source.Template != nil
+	hasNewFormat := source.GitRepository != nil || source.OCIRepository != nil
+
+	// Don't allow mixing old and new formats
+	if hasOldFormat && hasNewFormat {
+		allErrs = append(allErrs, field.Invalid(fldPath, source, "cannot mix deprecated 'template' field with new 'gitRepository' or 'ociRepository' fields"))
+	}
+
+	// Handle old format (will be migrated by defaulting, but validate here too)
+	if hasOldFormat {
+		// Validate as GitRepository using old fields
+		gitSource := &fluxv1alpha1.GitRepositorySource{
+			Template:           *source.Template,
+			SecretResourceName: source.SecretResourceName,
+		}
+		allErrs = append(allErrs, ValidateGitRepositorySource(gitSource, shoot, fldPath)...)
+		return allErrs
+	}
+
+	// Handle new format
 	// Check mutex: exactly one source type must be set
 	if source.GitRepository == nil && source.OCIRepository == nil {
 		allErrs = append(allErrs, field.Required(fldPath, "must specify either gitRepository or ociRepository"))

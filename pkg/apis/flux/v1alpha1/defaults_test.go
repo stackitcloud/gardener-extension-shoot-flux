@@ -183,6 +183,100 @@ var _ = Describe("FluxConfig defaulting", func() {
 			Expect(obj.Source.OCIRepository.Template.Name).To(Equal("flux-system"))
 			Expect(obj.Source.OCIRepository.Template.Namespace).To(Equal("flux-system"))
 		})
+
+		// Backwards compatibility tests for deprecated Template field
+		It("should migrate deprecated Template field to GitRepository", func() {
+			obj.Source = &Source{
+				Template: &sourcev1.GitRepository{
+					Spec: sourcev1.GitRepositorySpec{
+						Reference: &sourcev1.GitRepositoryRef{
+							Branch: "main",
+						},
+						URL: "https://github.com/example/repo",
+					},
+				},
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Should migrate to new format
+			Expect(obj.Source.GitRepository).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Spec.URL).To(Equal("https://github.com/example/repo"))
+			Expect(obj.Source.GitRepository.Template.Spec.Reference.Branch).To(Equal("main"))
+
+			// Old fields should be cleared
+			Expect(obj.Source.Template).To(BeNil())
+		})
+
+		It("should migrate deprecated Template and SecretResourceName fields to GitRepository", func() {
+			obj.Source = &Source{
+				Template: &sourcev1.GitRepository{
+					Spec: sourcev1.GitRepositorySpec{
+						Reference: &sourcev1.GitRepositoryRef{
+							Branch: "main",
+						},
+						URL: "https://github.com/example/repo",
+					},
+				},
+				SecretResourceName: ptr.To("my-secret"),
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Should migrate to new format
+			Expect(obj.Source.GitRepository).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Spec.URL).To(Equal("https://github.com/example/repo"))
+			Expect(obj.Source.GitRepository.SecretResourceName).To(Equal(ptr.To("my-secret")))
+
+			// Should default secretRef
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Spec.SecretRef.Name).To(Equal("flux-system"))
+
+			// Old fields should be cleared
+			Expect(obj.Source.Template).To(BeNil())
+			Expect(obj.Source.SecretResourceName).To(BeNil())
+		})
+
+		It("should not migrate if new GitRepository field is already set", func() {
+			obj.Source = &Source{
+				GitRepository: &GitRepositorySource{
+					Template: sourcev1.GitRepository{
+						Spec: sourcev1.GitRepositorySpec{
+							Reference: &sourcev1.GitRepositoryRef{
+								Branch: "main",
+							},
+							URL: "https://github.com/new/repo",
+						},
+					},
+				},
+				// These should be ignored if GitRepository is set
+				Template: &sourcev1.GitRepository{
+					Spec: sourcev1.GitRepositorySpec{
+						URL: "https://github.com/old/repo",
+					},
+				},
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Should keep new format unchanged
+			Expect(obj.Source.GitRepository.Template.Spec.URL).To(Equal("https://github.com/new/repo"))
+			// Old fields should NOT be migrated
+			Expect(obj.Source.Template).NotTo(BeNil()) // Still present but ignored
+		})
+
+		It("should handle empty deprecated Template", func() {
+			obj.Source = &Source{
+				Template: &sourcev1.GitRepository{}, // Empty
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Should still migrate but with defaults applied
+			Expect(obj.Source.GitRepository).NotTo(BeNil())
+			Expect(obj.Source.GitRepository.Template.Name).To(Equal("flux-system"))
+			Expect(obj.Source.Template).To(BeNil())
+		})
 	})
 
 	Describe("Kustomization defaulting", func() {

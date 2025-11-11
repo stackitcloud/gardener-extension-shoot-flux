@@ -10,6 +10,7 @@
 package v1alpha1
 
 import (
+	v1 "github.com/fluxcd/source-controller/api/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -195,6 +196,16 @@ func (in *Source) DeepCopyInto(out *Source) {
 		in, out := &in.OCIRepository, &out.OCIRepository
 		*out = new(OCIRepositorySource)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Template != nil {
+		in, out := &in.Template, &out.Template
+		*out = new(v1.GitRepository)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.SecretResourceName != nil {
+		in, out := &in.SecretResourceName, &out.SecretResourceName
+		*out = new(string)
+		**out = **in
 	}
 	return
 }

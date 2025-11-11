@@ -358,7 +358,8 @@ The secret data from this resource is used to create the OCIRepository&rsquo;s c
 </p>
 <p>
 <p>Source configures how to bootstrap a Flux source object.
-Exactly one of GitRepository or OCIRepository must be set.</p>
+For new configurations, use either GitRepository or OCIRepository.
+The old Template/SecretResourceName fields are deprecated but still supported for backwards compatibility.</p>
 </p>
 <table>
 <thead>
@@ -394,6 +395,36 @@ OCIRepositorySource
 <td>
 <em>(Optional)</em>
 <p>OCIRepository configures an OCIRepository source.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>template</code></br>
+<em>
+<a href="https://fluxcd.io/flux/components/source/api/v1/#source.toolkit.fluxcd.io/v1.GitRepository">
+source.toolkit.fluxcd.io/v1.GitRepository
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DEPRECATED: Use GitRepository.Template instead.
+Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
+This field is automatically migrated to GitRepository.Template during defaulting.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretResourceName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DEPRECATED: Use GitRepository.SecretResourceName instead.
+SecretResourceName references a resource under Shoot.spec.resources.
+This field is automatically migrated to GitRepository.SecretResourceName during defaulting.</p>
 </td>
 </tr>
 </tbody>
