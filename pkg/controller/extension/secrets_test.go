@@ -28,21 +28,24 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 	BeforeAll(func() {
 		shootClient = newShootClient()
 		seedClient = newSeedClient()
+		gitRepo := &sourcev1.GitRepository{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: sourcev1.GroupVersion.String(),
+				Kind:       sourcev1.GitRepositoryKind,
+			},
+			Spec: sourcev1.GitRepositorySpec{
+				SecretRef: &fluxmeta.LocalObjectReference{
+					Name: "ssh-target-name",
+				},
+			},
+		}
 		config = &fluxv1alpha1.FluxConfig{
 			Flux: &fluxv1alpha1.FluxInstallation{
 				Namespace: ptr.To("flux-system"),
 			},
 			Source: &fluxv1alpha1.Source{
-				GitRepository: &fluxv1alpha1.GitRepositorySource{
-					SecretResourceName: ptr.To("source-secret"),
-					Template: sourcev1.GitRepository{
-						Spec: sourcev1.GitRepositorySpec{
-							SecretRef: &fluxmeta.LocalObjectReference{
-								Name: "ssh-target-name",
-							},
-						},
-					},
-				},
+				Template:           encodeSourceObject(gitRepo),
+				SecretResourceName: ptr.To("source-secret"),
 			},
 			AdditionalSecretResources: []fluxv1alpha1.AdditionalResource{{
 				Name: "extra-secret",

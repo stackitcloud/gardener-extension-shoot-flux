@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -230,23 +231,28 @@ var _ = Describe("BootstrapSource", func() {
 	)
 
 	Context("with GitRepository", func() {
+		var gitRepo *sourcev1.GitRepository
+
 		BeforeEach(func() {
 			shootClient = newShootClient()
-			config = &fluxv1alpha1.Source{
-				GitRepository: &fluxv1alpha1.GitRepositorySource{
-					Template: sourcev1.GitRepository{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "gitrepo",
-							Namespace: "custom-namespace",
-						},
-						Spec: sourcev1.GitRepositorySpec{
-							URL: "http://example.com",
-							Reference: &sourcev1.GitRepositoryRef{
-								Branch: "main",
-							},
-						},
+			gitRepo = &sourcev1.GitRepository{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: sourcev1.GroupVersion.String(),
+					Kind:       sourcev1.GitRepositoryKind,
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gitrepo",
+					Namespace: "custom-namespace",
+				},
+				Spec: sourcev1.GitRepositorySpec{
+					URL: "http://example.com",
+					Reference: &sourcev1.GitRepositoryRef{
+						Branch: "main",
 					},
 				},
+			}
+			config = &fluxv1alpha1.Source{
+				Template: encodeSourceObject(gitRepo),
 			}
 		})
 
@@ -256,7 +262,7 @@ var _ = Describe("BootstrapSource", func() {
 					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
 				).To(Succeed())
 			})
-			repo := config.GitRepository.Template.DeepCopy()
+			repo := gitRepo.DeepCopy()
 			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
 			Eventually(done).Should(BeClosed())
 
@@ -264,7 +270,7 @@ var _ = Describe("BootstrapSource", func() {
 			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
 			Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
 
-			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.GitRepository.Template.Namespace}}
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: gitRepo.Namespace}}
 			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
 		})
 
@@ -278,23 +284,28 @@ var _ = Describe("BootstrapSource", func() {
 	})
 
 	Context("with OCIRepository", func() {
+		var ociRepo *sourcev1.OCIRepository
+
 		BeforeEach(func() {
 			shootClient = newShootClient()
-			config = &fluxv1alpha1.Source{
-				OCIRepository: &fluxv1alpha1.OCIRepositorySource{
-					Template: sourcev1.OCIRepository{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "ocirepository",
-							Namespace: "custom-namespace",
-						},
-						Spec: sourcev1.OCIRepositorySpec{
-							URL: "oci://ghcr.io/example/manifests",
-							Reference: &sourcev1.OCIRepositoryRef{
-								Tag: "v1.0.0",
-							},
-						},
+			ociRepo = &sourcev1.OCIRepository{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: sourcev1.GroupVersion.String(),
+					Kind:       sourcev1.OCIRepositoryKind,
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ocirepository",
+					Namespace: "custom-namespace",
+				},
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
 					},
 				},
+			}
+			config = &fluxv1alpha1.Source{
+				Template: encodeSourceObject(ociRepo),
 			}
 		})
 
@@ -304,7 +315,7 @@ var _ = Describe("BootstrapSource", func() {
 					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
 				).To(Succeed())
 			})
-			repo := config.OCIRepository.Template.DeepCopy()
+			repo := ociRepo.DeepCopy()
 			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
 			Eventually(done).Should(BeClosed())
 
@@ -313,7 +324,7 @@ var _ = Describe("BootstrapSource", func() {
 			Expect(createdRepo.Spec.URL).To(Equal("oci://ghcr.io/example/manifests"))
 			Expect(createdRepo.Spec.Reference.Tag).To(Equal("v1.0.0"))
 
-			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.OCIRepository.Template.Namespace}}
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ociRepo.Namespace}}
 			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
 		})
 
@@ -326,16 +337,17 @@ var _ = Describe("BootstrapSource", func() {
 		})
 
 		It("should handle OCI with semver reference", func() {
-			config.OCIRepository.Template.Spec.Reference = &sourcev1.OCIRepositoryRef{
+			ociRepo.Spec.Reference = &sourcev1.OCIRepositoryRef{
 				SemVer: ">= 1.0.0",
 			}
+			config.Template = encodeSourceObject(ociRepo)
 
 			done := testAsync(func() {
 				Expect(
 					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
 				).To(Succeed())
 			})
-			repo := config.OCIRepository.Template.DeepCopy()
+			repo := ociRepo.DeepCopy()
 			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
 			Eventually(done).Should(BeClosed())
 
@@ -346,31 +358,22 @@ var _ = Describe("BootstrapSource", func() {
 	})
 
 	Context("with invalid source", func() {
-		It("should fail when both GitRepository and OCIRepository are set", func() {
-			config = &fluxv1alpha1.Source{
-				GitRepository: &fluxv1alpha1.GitRepositorySource{
-					Template: sourcev1.GitRepository{
-						ObjectMeta: metav1.ObjectMeta{Name: "git", Namespace: "test"},
-					},
-				},
-				OCIRepository: &fluxv1alpha1.OCIRepositorySource{
-					Template: sourcev1.OCIRepository{
-						ObjectMeta: metav1.ObjectMeta{Name: "oci", Namespace: "test"},
-					},
-				},
-			}
-
-			Expect(
-				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(MatchError(ContainSubstring("invalid source configuration")))
-		})
-
-		It("should fail when neither GitRepository nor OCIRepository are set", func() {
+		It("should fail when template is nil", func() {
 			config = &fluxv1alpha1.Source{}
 
 			Expect(
 				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(MatchError(ContainSubstring("invalid source configuration")))
+			).To(MatchError(ContainSubstring("source template is required")))
+		})
+
+		It("should fail when template contains invalid JSON", func() {
+			config = &fluxv1alpha1.Source{
+				Template: &runtime.RawExtension{Raw: []byte(`{invalid json}`)},
+			}
+
+			Expect(
+				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+			).To(MatchError(ContainSubstring("failed to decode source template")))
 		})
 	})
 })
@@ -581,6 +584,25 @@ func fakeFluxResourceReady(ctx context.Context, c client.Client, obj fluxmeta.Ob
 		}})
 		return c.Status().Update(ctx, cObj)
 	}
+}
+
+// encodeSourceObject encodes a Flux source object (GitRepository or OCIRepository) into a runtime.RawExtension
+func encodeSourceObject(obj runtime.Object) *runtime.RawExtension {
+	scheme := runtime.NewScheme()
+	_ = sourcev1.AddToScheme(scheme)
+
+	gvk := sourcev1.GroupVersion.WithKind(sourcev1.GitRepositoryKind)
+	if _, ok := obj.(*sourcev1.OCIRepository); ok {
+		gvk = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepositoryKind)
+	}
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+
+	data, err := runtime.Encode(unstructured.UnstructuredJSONScheme, obj)
+	if err != nil {
+		panic(err)
+	}
+
+	return &runtime.RawExtension{Raw: data}
 }
 
 func fakeFluxReady(ctx context.Context, c client.Client, namespace string) func() error {

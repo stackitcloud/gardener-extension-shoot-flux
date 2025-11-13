@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -10,6 +12,9 @@ import (
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
@@ -68,78 +73,108 @@ func ValidateFluxInstallation(fluxInstallation *fluxv1alpha1.FluxInstallation, f
 	return allErrs
 }
 
-var supportedGitRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.GitRepositoryKind)
-var supportedOCIRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepositoryKind)
+var (
+	supportedGitRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.GitRepositoryKind)
+	supportedOCIRepositoryGVK = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepositoryKind)
+
+	// scheme is used for decoding source templates
+	scheme  = runtime.NewScheme()
+	decoder runtime.Decoder
+)
+
+func init() {
+	// Register Flux source types
+	_ = sourcev1.AddToScheme(scheme)
+	decoder = serializer.NewCodecFactory(scheme).UniversalDeserializer()
+}
+
+// decodeSourceTemplate decodes a runtime.RawExtension into a Flux source object.
+// Returns the decoded object and its kind string, or an error if decoding fails.
+func decodeSourceTemplate(raw *runtime.RawExtension) (runtime.Object, string, error) {
+	if raw == nil || raw.Raw == nil {
+		return nil, "", fmt.Errorf("template is required")
+	}
+
+	// First peek at the TypeMeta to get the GVK
+	typeMeta := &metav1.TypeMeta{}
+	if err := json.Unmarshal(raw.Raw, typeMeta); err != nil {
+		return nil, "", fmt.Errorf("failed to peek at GVK: %w", err)
+	}
+
+	gvk := typeMeta.GroupVersionKind()
+	if gvk.Kind == "" {
+		return nil, "", fmt.Errorf("could not find 'kind' in template")
+	}
+
+	// Decode into the specific type
+	obj, err := scheme.New(gvk)
+	if err != nil {
+		return nil, gvk.Kind, fmt.Errorf("unsupported source type %v: %w", gvk, err)
+	}
+
+	if err := runtime.DecodeInto(decoder, raw.Raw, obj); err != nil {
+		return nil, gvk.Kind, fmt.Errorf("failed to decode into %v: %w", gvk, err)
+	}
+
+	return obj, gvk.Kind, nil
+}
 
 // ValidateSource validates a Source object.
 func ValidateSource(source *fluxv1alpha1.Source, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// Check for old format (deprecated but still supported)
-	hasOldFormat := source.Template != nil
-	hasNewFormat := source.GitRepository != nil || source.OCIRepository != nil
-
-	// Don't allow mixing old and new formats
-	if hasOldFormat && hasNewFormat {
-		allErrs = append(allErrs, field.Invalid(fldPath, source, "cannot mix deprecated 'template' field with new 'gitRepository' or 'ociRepository' fields"))
-	}
-
-	// Handle old format (will be migrated by defaulting, but validate here too)
-	if hasOldFormat {
-		// Validate as GitRepository using old fields
-		gitSource := &fluxv1alpha1.GitRepositorySource{
-			Template:           *source.Template,
-			SecretResourceName: source.SecretResourceName,
-		}
-		allErrs = append(allErrs, ValidateGitRepositorySource(gitSource, shoot, fldPath)...)
+	if source.Template == nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("template"), "template is required"))
 		return allErrs
 	}
 
-	// Handle new format
-	// Check mutex: exactly one source type must be set
-	if source.GitRepository == nil && source.OCIRepository == nil {
-		allErrs = append(allErrs, field.Required(fldPath, "must specify either gitRepository or ociRepository"))
-	}
-	if source.GitRepository != nil && source.OCIRepository != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath, source, "cannot specify both gitRepository and ociRepository"))
+	// Decode the template to determine its type
+	obj, kind, err := decodeSourceTemplate(source.Template)
+	if err != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("template"), source.Template, err.Error()))
+		return allErrs
 	}
 
-	// Validate specific source type
-	if source.GitRepository != nil {
-		allErrs = append(allErrs, ValidateGitRepositorySource(source.GitRepository, shoot, fldPath.Child("gitRepository"))...)
-	}
-	if source.OCIRepository != nil {
-		allErrs = append(allErrs, ValidateOCIRepositorySource(source.OCIRepository, shoot, fldPath.Child("ociRepository"))...)
+	templatePath := fldPath.Child("template")
+
+	// Validate based on the source type
+	switch v := obj.(type) {
+	case *sourcev1.GitRepository:
+		allErrs = append(allErrs, validateGitRepository(v, source.SecretResourceName, shoot, templatePath, fldPath)...)
+	case *sourcev1.OCIRepository:
+		allErrs = append(allErrs, validateOCIRepository(v, source.SecretResourceName, shoot, templatePath, fldPath)...)
+	default:
+		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), kind, []string{sourcev1.GitRepositoryKind, sourcev1.OCIRepositoryKind}))
 	}
 
 	return allErrs
 }
 
-// ValidateGitRepositorySource validates a GitRepositorySource object.
-func ValidateGitRepositorySource(source *fluxv1alpha1.GitRepositorySource, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
+// validateGitRepository validates a GitRepository template.
+func validateGitRepository(template *sourcev1.GitRepository, secretResourceName *string, shoot *gardencorev1beta1.Shoot, templatePath, parentPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	template := source.Template
-	templatePath := fldPath.Child("template")
-
+	// Validate GVK
 	if gvk := template.GroupVersionKind(); !gvk.Empty() && gvk != supportedGitRepositoryGVK {
 		allErrs = append(allErrs, field.NotSupported(templatePath.Child("apiVersion"), template.APIVersion, []string{supportedGitRepositoryGVK.GroupVersion().String()}))
-		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), template.APIVersion, []string{supportedGitRepositoryGVK.Kind}))
+		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), template.Kind, []string{supportedGitRepositoryGVK.Kind}))
 	}
 
+	// Validate spec fields
 	specPath := templatePath.Child("spec")
 	if ref := template.Spec.Reference; ref == nil || apiequality.Semantic.DeepEqual(ref, &sourcev1.GitRepositoryRef{}) {
 		allErrs = append(allErrs, field.Required(specPath.Child("ref"), "GitRepository must have a reference"))
 	}
 
 	if template.Spec.URL == "" {
-		allErrs = append(allErrs, field.Required(specPath.Child("url"), "GitRepository must have an URL"))
+		allErrs = append(allErrs, field.Required(specPath.Child("url"), "GitRepository must have a URL"))
 	}
 
+	// Validate secret references
 	hasSecretRef := template.Spec.SecretRef != nil && template.Spec.SecretRef.Name != ""
-	hasSecretResourceName := ptr.Deref(source.SecretResourceName, "") != ""
+	hasSecretResourceName := ptr.Deref(secretResourceName, "") != ""
 	secretRefPath := specPath.Child("secretRef")
-	secretResourceNamePath := fldPath.Child("secretResourceName")
+	secretResourceNamePath := parentPath.Child("secretResourceName")
 
 	if hasSecretRef && !hasSecretResourceName {
 		allErrs = append(allErrs, field.Required(secretResourceNamePath, "must specify a secret resource name if "+secretRefPath.String()+" is specified"))
@@ -149,24 +184,23 @@ func ValidateGitRepositorySource(source *fluxv1alpha1.GitRepositorySource, shoot
 	}
 
 	if hasSecretResourceName {
-		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *source.SecretResourceName)...)
+		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *secretResourceName)...)
 	}
 
 	return allErrs
 }
 
-// ValidateOCIRepositorySource validates an OCIRepositorySource object.
-func ValidateOCIRepositorySource(source *fluxv1alpha1.OCIRepositorySource, shoot *gardencorev1beta1.Shoot, fldPath *field.Path) field.ErrorList {
+// validateOCIRepository validates an OCIRepository template.
+func validateOCIRepository(template *sourcev1.OCIRepository, secretResourceName *string, shoot *gardencorev1beta1.Shoot, templatePath, parentPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	template := source.Template
-	templatePath := fldPath.Child("template")
-
+	// Validate GVK
 	if gvk := template.GroupVersionKind(); !gvk.Empty() && gvk != supportedOCIRepositoryGVK {
 		allErrs = append(allErrs, field.NotSupported(templatePath.Child("apiVersion"), template.APIVersion, []string{supportedOCIRepositoryGVK.GroupVersion().String()}))
-		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), template.APIVersion, []string{supportedOCIRepositoryGVK.Kind}))
+		allErrs = append(allErrs, field.NotSupported(templatePath.Child("kind"), template.Kind, []string{supportedOCIRepositoryGVK.Kind}))
 	}
 
+	// Validate spec fields
 	specPath := templatePath.Child("spec")
 
 	// Validate URL
@@ -183,10 +217,11 @@ func ValidateOCIRepositorySource(source *fluxv1alpha1.OCIRepositorySource, shoot
 		allErrs = append(allErrs, field.Invalid(specPath.Child("ref"), ref, "must specify tag, semver, or digest"))
 	}
 
+	// Validate secret references
 	hasSecretRef := template.Spec.SecretRef != nil && template.Spec.SecretRef.Name != ""
-	hasSecretResourceName := ptr.Deref(source.SecretResourceName, "") != ""
+	hasSecretResourceName := ptr.Deref(secretResourceName, "") != ""
 	secretRefPath := specPath.Child("secretRef")
-	secretResourceNamePath := fldPath.Child("secretResourceName")
+	secretResourceNamePath := parentPath.Child("secretResourceName")
 
 	if hasSecretRef && !hasSecretResourceName {
 		allErrs = append(allErrs, field.Required(secretResourceNamePath, "must specify a secret resource name if "+secretRefPath.String()+" is specified"))
@@ -196,7 +231,7 @@ func ValidateOCIRepositorySource(source *fluxv1alpha1.OCIRepositorySource, shoot
 	}
 
 	if hasSecretResourceName {
-		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *source.SecretResourceName)...)
+		allErrs = append(allErrs, validateSecretResource(shoot.Spec.Resources, secretResourceNamePath, *secretResourceName)...)
 	}
 
 	return allErrs

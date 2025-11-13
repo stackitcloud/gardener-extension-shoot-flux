@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -72,63 +72,47 @@ type FluxInstallation struct {
 }
 
 // Source configures how to bootstrap a Flux source object.
-// For new configurations, use either GitRepository or OCIRepository.
+// Supported source types: GitRepository, OCIRepository.
 //
-// MIGRATION: Old configurations using 'template' and 'secretResourceName' fields
-// are automatically migrated to the new 'gitRepository' format during API processing.
-// The old fields will be cleared after migration. Users should update their configs
-// to use the new structure:
+// The Template field contains a raw Kubernetes object (GitRepository or OCIRepository).
+// The kind field in the template determines which type is used.
 //
-//	Old:  source: { template: {...}, secretResourceName: "..." }
-//	New:  source: { gitRepository: { template: {...}, secretResourceName: "..." } }
+// Example GitRepository:
+//
+//	source:
+//	  template:
+//	    apiVersion: source.toolkit.fluxcd.io/v1
+//	    kind: GitRepository
+//	    spec:
+//	      url: https://github.com/example/repo
+//	      ref:
+//	        branch: main
+//
+// Example OCIRepository:
+//
+//	source:
+//	  template:
+//	    apiVersion: source.toolkit.fluxcd.io/v1beta2
+//	    kind: OCIRepository
+//	    spec:
+//	      url: oci://ghcr.io/example/repo
+//	      ref:
+//	        tag: latest
 type Source struct {
-	// GitRepository configures a GitRepository source.
-	// +optional
-	GitRepository *GitRepositorySource `json:"gitRepository,omitempty"`
-	// OCIRepository configures an OCIRepository source.
-	// +optional
-	OCIRepository *OCIRepositorySource `json:"ociRepository,omitempty"`
-
-	// DEPRECATED: Use GitRepository.Template instead.
-	// Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
-	// This field is automatically migrated to GitRepository.Template during defaulting.
-	// +optional
-	Template *sourcev1.GitRepository `json:"template,omitempty"`
-	// DEPRECATED: Use GitRepository.SecretResourceName instead.
-	// SecretResourceName references a resource under Shoot.spec.resources.
-	// This field is automatically migrated to GitRepository.SecretResourceName during defaulting.
-	// +optional
-	SecretResourceName *string `json:"secretResourceName,omitempty"`
-}
-
-// GitRepositorySource configures a GitRepository source for bootstrapping.
-type GitRepositorySource struct {
-	// Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
-	// Required fields: spec.ref.*, spec.url.
+	// Template contains a Flux source object (GitRepository or OCIRepository).
+	// The kind field determines which type is used.
+	// Required fields depend on the source type:
+	// - GitRepository: spec.ref.*, spec.url
+	// - OCIRepository: spec.ref, spec.url
 	// The following defaults are applied to omitted fields:
 	// - metadata.name is defaulted to "flux-system"
 	// - metadata.namespace is defaulted to "flux-system"
 	// - spec.interval is defaulted to "1m"
-	Template sourcev1.GitRepository `json:"template"`
-	// SecretResourceName references a resource under Shoot.spec.resources.
-	// The secret data from this resource is used to create the GitRepository's credentials secret
-	// (GitRepository.spec.secretRef.name) if specified in Template.
 	// +optional
-	SecretResourceName *string `json:"secretResourceName,omitempty"`
-}
-
-// OCIRepositorySource configures an OCIRepository source for bootstrapping.
-type OCIRepositorySource struct {
-	// Template is a partial OCIRepository object in API version source.toolkit.fluxcd.io/v1.
-	// Required fields: spec.ref, spec.url.
-	// The following defaults are applied to omitted fields:
-	// - metadata.name is defaulted to "flux-system"
-	// - metadata.namespace is defaulted to "flux-system"
-	// - spec.interval is defaulted to "1m"
-	Template sourcev1.OCIRepository `json:"template"`
+	Template *runtime.RawExtension `json:"template,omitempty"`
 	// SecretResourceName references a resource under Shoot.spec.resources.
-	// The secret data from this resource is used to create the OCIRepository's credentials secret
-	// (OCIRepository.spec.secretRef.name) if specified in Template.
+	// The secret data from this resource is used to create the source's credentials secret
+	// (spec.secretRef.name) if specified in Template.
 	// +optional
 	SecretResourceName *string `json:"secretResourceName,omitempty"`
 }

@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"time"
 
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
@@ -8,6 +9,7 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/utils/ptr"
 )
 
@@ -20,8 +22,64 @@ const (
 	defaultFluxVersion = "v2.7.5"
 )
 
+var (
+	// defaultingScheme is used for encoding/decoding source templates
+	defaultingScheme  = runtime.NewScheme()
+	defaultingEncoder runtime.Encoder
+	defaultingDecoder runtime.Decoder
+)
+
+func init() {
+	// Register Flux source types for defaulting
+	_ = sourcev1.AddToScheme(defaultingScheme)
+	codecFactory := serializer.NewCodecFactory(defaultingScheme)
+	defaultingEncoder = codecFactory.LegacyCodec(sourcev1.GroupVersion)
+	defaultingDecoder = codecFactory.UniversalDeserializer()
+}
+
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
+}
+
+// decodeSourceTemplateForDefaulting decodes a runtime.RawExtension into a Flux source object.
+// Returns the decoded object or nil if decoding fails (fails silently to not break defaulting).
+func decodeSourceTemplateForDefaulting(raw *runtime.RawExtension) runtime.Object {
+	if raw == nil || raw.Raw == nil {
+		return nil
+	}
+
+	//  Peek at TypeMeta to get GVK
+	typeMeta := &metav1.TypeMeta{}
+	if err := json.Unmarshal(raw.Raw, typeMeta); err != nil {
+		return nil
+	}
+
+	gvk := typeMeta.GroupVersionKind()
+	if gvk.Kind == "" {
+		return nil
+	}
+
+	// Create object and decode
+	obj, err := defaultingScheme.New(gvk)
+	if err != nil {
+		return nil
+	}
+
+	if err := runtime.DecodeInto(defaultingDecoder, raw.Raw, obj); err != nil {
+		return nil
+	}
+
+	return obj
+}
+
+// encodeSourceTemplate encodes a Flux source object back to runtime.RawExtension.
+func encodeSourceTemplate(obj runtime.Object) (*runtime.RawExtension, error) {
+	raw, err := runtime.Encode(defaultingEncoder, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &runtime.RawExtension{Raw: raw}, nil
 }
 
 func SetDefaults_FluxConfig(obj *FluxConfig) {
@@ -29,33 +87,54 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 		obj.Flux = &FluxInstallation{}
 	}
 
-	// validation will ensure that both Source & Kustomization or set or both
+	// validation will ensure that both Source & Kustomization are set or both
 	// are nil, but we have to handle all cases, since defaulting happens first.
 	if obj.Source != nil && obj.Kustomization != nil {
-		var sourceName, sourceNamespace string
-		if obj.Source.GitRepository != nil {
-			sourceName = obj.Source.GitRepository.Template.Name
-			sourceNamespace = obj.Source.GitRepository.Template.Namespace
-		} else if obj.Source.OCIRepository != nil {
-			sourceName = obj.Source.OCIRepository.Template.Name
-			sourceNamespace = obj.Source.OCIRepository.Template.Namespace
-		}
+		// Decode source template to get name and namespace
+		sourceObj := decodeSourceTemplateForDefaulting(obj.Source.Template)
+		if sourceObj != nil {
+			var sourceName, sourceNamespace string
+			switch v := sourceObj.(type) {
+			case *sourcev1.GitRepository:
+				sourceName = v.Name
+				sourceNamespace = v.Namespace
+			case *sourcev1.OCIRepository:
+				sourceName = v.Name
+				sourceNamespace = v.Namespace
+			}
 
-		if obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
-			obj.Kustomization.Template.Spec.SourceRef.Name = sourceName
-		}
-		if obj.Kustomization.Template.Spec.SourceRef.Namespace == "" && sourceNamespace != "" {
-			obj.Kustomization.Template.Spec.SourceRef.Namespace = sourceNamespace
+			if obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
+				obj.Kustomization.Template.Spec.SourceRef.Name = sourceName
+			}
+			if obj.Kustomization.Template.Spec.SourceRef.Namespace == "" && sourceNamespace != "" {
+				obj.Kustomization.Template.Spec.SourceRef.Namespace = sourceNamespace
+			}
 		}
 	}
 
 	if namespace := ptr.Deref(obj.Flux.Namespace, ""); namespace != "" {
-		if obj.Source != nil {
-			if obj.Source.GitRepository != nil && obj.Source.GitRepository.Template.Namespace == "" {
-				obj.Source.GitRepository.Template.Namespace = namespace
-			}
-			if obj.Source.OCIRepository != nil && obj.Source.OCIRepository.Template.Namespace == "" {
-				obj.Source.OCIRepository.Template.Namespace = namespace
+		if obj.Source != nil && obj.Source.Template != nil {
+			// Decode, update namespace if needed, re-encode
+			sourceObj := decodeSourceTemplateForDefaulting(obj.Source.Template)
+			if sourceObj != nil {
+				modified := false
+				switch v := sourceObj.(type) {
+				case *sourcev1.GitRepository:
+					if v.Namespace == "" {
+						v.Namespace = namespace
+						modified = true
+					}
+				case *sourcev1.OCIRepository:
+					if v.Namespace == "" {
+						v.Namespace = namespace
+						modified = true
+					}
+				}
+				if modified {
+					if encoded, err := encodeSourceTemplate(sourceObj); err == nil {
+						obj.Source.Template = encoded
+					}
+				}
 			}
 		}
 		if obj.Kustomization != nil && obj.Kustomization.Template.Namespace == "" {
@@ -82,39 +161,51 @@ func SetDefaults_FluxInstallation(obj *FluxInstallation) {
 }
 
 func SetDefaults_Source(obj *Source) {
-	// Migrate deprecated fields to new structure for backwards compatibility
-	if obj.Template != nil && obj.GitRepository == nil && obj.OCIRepository == nil {
-		// Old format detected, migrate to new format
-		obj.GitRepository = &GitRepositorySource{
-			Template:           *obj.Template,
-			SecretResourceName: obj.SecretResourceName,
-		}
-		// Clear deprecated fields after migration
-		obj.Template = nil
-		obj.SecretResourceName = nil
+	if obj.Template == nil {
+		return
 	}
 
-	if obj.GitRepository != nil {
-		SetDefaults_Flux_GitRepository(&obj.GitRepository.Template)
+	// Decode the template
+	sourceObj := decodeSourceTemplateForDefaulting(obj.Template)
+	if sourceObj == nil {
+		return
+	}
 
-		hasSecretRef := obj.GitRepository.Template.Spec.SecretRef != nil && obj.GitRepository.Template.Spec.SecretRef.Name != ""
-		hasSecretResourceName := ptr.Deref(obj.GitRepository.SecretResourceName, "") != ""
+	modified := false
+
+	// Apply defaults based on source type
+	switch v := sourceObj.(type) {
+	case *sourcev1.GitRepository:
+		SetDefaults_Flux_GitRepository(v)
+		modified = true
+
+		// If secretResourceName is set but secretRef is not, create default secretRef
+		hasSecretRef := v.Spec.SecretRef != nil && v.Spec.SecretRef.Name != ""
+		hasSecretResourceName := ptr.Deref(obj.SecretResourceName, "") != ""
 		if hasSecretResourceName && !hasSecretRef {
-			obj.GitRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
+			v.Spec.SecretRef = &meta.LocalObjectReference{
+				Name: "flux-system",
+			}
+		}
+
+	case *sourcev1.OCIRepository:
+		SetDefaults_Flux_OCIRepository(v)
+		modified = true
+
+		// If secretResourceName is set but secretRef is not, create default secretRef
+		hasSecretRef := v.Spec.SecretRef != nil && v.Spec.SecretRef.Name != ""
+		hasSecretResourceName := ptr.Deref(obj.SecretResourceName, "") != ""
+		if hasSecretResourceName && !hasSecretRef {
+			v.Spec.SecretRef = &meta.LocalObjectReference{
 				Name: "flux-system",
 			}
 		}
 	}
 
-	if obj.OCIRepository != nil {
-		SetDefaults_Flux_OCIRepository(&obj.OCIRepository.Template)
-
-		hasSecretRef := obj.OCIRepository.Template.Spec.SecretRef != nil && obj.OCIRepository.Template.Spec.SecretRef.Name != ""
-		hasSecretResourceName := ptr.Deref(obj.OCIRepository.SecretResourceName, "") != ""
-		if hasSecretResourceName && !hasSecretRef {
-			obj.OCIRepository.Template.Spec.SecretRef = &meta.LocalObjectReference{
-				Name: "flux-system",
-			}
+	// Re-encode if we modified the object
+	if modified {
+		if encoded, err := encodeSourceTemplate(sourceObj); err == nil {
+			obj.Template = encoded
 		}
 	}
 }
