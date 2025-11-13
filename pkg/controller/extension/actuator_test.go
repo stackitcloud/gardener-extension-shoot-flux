@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,6 +77,117 @@ flux:
 	})
 })
 
+var _ = Describe("usesDeprecatedSourceFormat", func() {
+	var (
+		scheme     *runtime.Scheme
+		fakeClient client.Client
+		a          *actuator
+	)
+
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		Expect(fluxv1alpha1.AddToScheme(scheme)).To(Succeed())
+		fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		a = NewActuator(fakeClient, "garden-id").(*actuator)
+	})
+
+	Context("old format with source.template", func() {
+		It("should detect deprecated format", func() {
+			rawExtension := &runtime.RawExtension{Raw: []byte(`{
+  "apiVersion": "flux.extensions.gardener.cloud/v1alpha1",
+  "kind": "FluxConfig",
+  "source": {
+    "template": {
+      "apiVersion": "source.toolkit.fluxcd.io/v1",
+      "kind": "GitRepository",
+      "spec": {
+        "url": "https://github.com/example/repo",
+        "ref": {
+          "branch": "main"
+        }
+      }
+    },
+    "secretResourceName": "my-secret"
+  }
+}`)}
+
+			Expect(a.usesDeprecatedSourceFormat(rawExtension)).To(BeTrue())
+		})
+	})
+
+	Context("new format with source.gitRepository", func() {
+		It("should not detect deprecated format", func() {
+			rawExtension := &runtime.RawExtension{Raw: []byte(`{
+  "apiVersion": "flux.extensions.gardener.cloud/v1alpha1",
+  "kind": "FluxConfig",
+  "source": {
+    "gitRepository": {
+      "template": {
+        "apiVersion": "source.toolkit.fluxcd.io/v1",
+        "kind": "GitRepository",
+        "spec": {
+          "url": "https://github.com/example/repo",
+          "ref": {
+            "branch": "main"
+          }
+        }
+      },
+      "secretResourceName": "my-secret"
+    }
+  }
+}`)}
+
+			Expect(a.usesDeprecatedSourceFormat(rawExtension)).To(BeFalse())
+		})
+	})
+
+	Context("new format with source.ociRepository", func() {
+		It("should not detect deprecated format", func() {
+			rawExtension := &runtime.RawExtension{Raw: []byte(`{
+  "apiVersion": "flux.extensions.gardener.cloud/v1alpha1",
+  "kind": "FluxConfig",
+  "source": {
+    "ociRepository": {
+      "template": {
+        "apiVersion": "source.toolkit.fluxcd.io/v1beta2",
+        "kind": "OCIRepository",
+        "spec": {
+          "url": "oci://ghcr.io/example/repo",
+          "ref": {
+            "tag": "latest"
+          }
+        }
+      }
+    }
+  }
+}`)}
+
+			Expect(a.usesDeprecatedSourceFormat(rawExtension)).To(BeFalse())
+		})
+	})
+
+	Context("no source configured", func() {
+		It("should not detect deprecated format", func() {
+			rawExtension := &runtime.RawExtension{Raw: []byte(`{
+  "apiVersion": "flux.extensions.gardener.cloud/v1alpha1",
+  "kind": "FluxConfig",
+  "flux": {
+    "version": "v2.0.0"
+  }
+}`)}
+
+			Expect(a.usesDeprecatedSourceFormat(rawExtension)).To(BeFalse())
+		})
+	})
+
+	Context("nil providerConfig", func() {
+		It("should not detect deprecated format", func() {
+			Expect(a.usesDeprecatedSourceFormat(nil)).To(BeFalse())
+		})
+	})
+})
+
 var _ = Describe("InstallFlux", func() {
 	var (
 		tmpDir      string
@@ -117,43 +229,152 @@ var _ = Describe("BootstrapSource", func() {
 		shootClient client.Client
 		config      *fluxv1alpha1.Source
 	)
-	BeforeEach(func() {
-		shootClient = newShootClient()
-		config = &fluxv1alpha1.Source{
-			Template: sourcev1.GitRepository{
+
+	Context("with GitRepository", func() {
+		var gitRepo *sourcev1.GitRepository
+
+		BeforeEach(func() {
+			shootClient = newShootClient()
+			gitRepo = &sourcev1.GitRepository{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: sourcev1.GroupVersion.String(),
+					Kind:       sourcev1.GitRepositoryKind,
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gitrepo",
 					Namespace: "custom-namespace",
 				},
 				Spec: sourcev1.GitRepositorySpec{
 					URL: "http://example.com",
+					Reference: &sourcev1.GitRepositoryRef{
+						Branch: "main",
+					},
 				},
-			},
-		}
-	})
-	It("should succesfully apply and wait for readiness", func() {
-		done := testAsync(func() {
-			Expect(
-				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(Succeed())
+			}
+			config = &fluxv1alpha1.Source{
+				Template: encodeSourceObject(gitRepo),
+			}
 		})
-		repo := config.Template.DeepCopy()
-		Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
-		Eventually(done).Should(BeClosed())
 
-		createdRepo := &sourcev1.GitRepository{}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo))
-		Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
+		It("should successfully apply and wait for readiness", func() {
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := gitRepo.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
 
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
-		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+			createdRepo := &sourcev1.GitRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.URL).To(Equal("http://example.com"))
+
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: gitRepo.Namespace}}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+		})
+
+		It("should fail if the resources do not get ready", func() {
+			Eventually(testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(MatchError(ContainSubstring("error waiting for GitRepository to get ready")))
+			})).Should(BeClosed())
+		})
 	})
-	It("should fail if the resources do not get ready", func() {
-		Eventually(testAsync(func() {
+
+	Context("with OCIRepository", func() {
+		var ociRepo *sourcev1.OCIRepository
+
+		BeforeEach(func() {
+			shootClient = newShootClient()
+			ociRepo = &sourcev1.OCIRepository{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: sourcev1.GroupVersion.String(),
+					Kind:       sourcev1.OCIRepositoryKind,
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ocirepository",
+					Namespace: "custom-namespace",
+				},
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+				},
+			}
+			config = &fluxv1alpha1.Source{
+				Template: encodeSourceObject(ociRepo),
+			}
+		})
+
+		It("should successfully apply and wait for readiness", func() {
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := ociRepo.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
+
+			createdRepo := &sourcev1.OCIRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.URL).To(Equal("oci://ghcr.io/example/manifests"))
+			Expect(createdRepo.Spec.Reference.Tag).To(Equal("v1.0.0"))
+
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ociRepo.Namespace}}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).Should(Succeed())
+		})
+
+		It("should fail if the resources do not get ready", func() {
+			Eventually(testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(MatchError(ContainSubstring("error waiting for OCIRepository to get ready")))
+			})).Should(BeClosed())
+		})
+
+		It("should handle OCI with semver reference", func() {
+			ociRepo.Spec.Reference = &sourcev1.OCIRepositoryRef{
+				SemVer: ">= 1.0.0",
+			}
+			config.Template = encodeSourceObject(ociRepo)
+
+			done := testAsync(func() {
+				Expect(
+					bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+				).To(Succeed())
+			})
+			repo := ociRepo.DeepCopy()
+			Eventually(fakeFluxResourceReady(ctx, shootClient, repo)).Should(Succeed())
+			Eventually(done).Should(BeClosed())
+
+			createdRepo := &sourcev1.OCIRepository{}
+			Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(repo), createdRepo)).To(Succeed())
+			Expect(createdRepo.Spec.Reference.SemVer).To(Equal(">= 1.0.0"))
+		})
+	})
+
+	Context("with invalid source", func() {
+		It("should fail when template is nil", func() {
+			config = &fluxv1alpha1.Source{}
+
 			Expect(
 				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
-			).To(MatchError(ContainSubstring("error waiting for GitRepository to get ready")))
-		})).Should(BeClosed())
+			).To(MatchError(ContainSubstring("source template is required")))
+		})
+
+		It("should fail when template contains invalid JSON", func() {
+			config = &fluxv1alpha1.Source{
+				Template: &runtime.RawExtension{Raw: []byte(`{invalid json}`)},
+			}
+
+			Expect(
+				bootstrapSource(ctx, log, shootClient, config, poll, timeout),
+			).To(MatchError(ContainSubstring("failed to decode source template")))
+		})
 	})
 })
 
@@ -338,6 +559,25 @@ func fakeFluxResourceReady(ctx context.Context, c client.Client, obj fluxmeta.Ob
 		}})
 		return c.Status().Update(ctx, cObj)
 	}
+}
+
+// encodeSourceObject encodes a Flux source object (GitRepository or OCIRepository) into a runtime.RawExtension
+func encodeSourceObject(obj runtime.Object) *runtime.RawExtension {
+	scheme := runtime.NewScheme()
+	_ = sourcev1.AddToScheme(scheme)
+
+	gvk := sourcev1.GroupVersion.WithKind(sourcev1.GitRepositoryKind)
+	if _, ok := obj.(*sourcev1.OCIRepository); ok {
+		gvk = sourcev1.GroupVersion.WithKind(sourcev1.OCIRepositoryKind)
+	}
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+
+	data, err := runtime.Encode(unstructured.UnstructuredJSONScheme, obj)
+	if err != nil {
+		panic(err)
+	}
+
+	return &runtime.RawExtension{Raw: data}
 }
 
 func fakeFluxReady(ctx context.Context, c client.Client, namespace string) func() error {

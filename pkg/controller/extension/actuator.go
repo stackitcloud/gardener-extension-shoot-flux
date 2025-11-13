@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -36,6 +37,48 @@ import (
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
 )
 
+var (
+	// actuatorScheme is used for decoding source templates in the actuator
+	actuatorScheme  = runtime.NewScheme()
+	actuatorDecoder runtime.Decoder
+)
+
+func init() {
+	// Register Flux source types
+	_ = sourcev1.AddToScheme(actuatorScheme)
+	actuatorDecoder = serializer.NewCodecFactory(actuatorScheme).UniversalDeserializer()
+}
+
+// decodeActuatorSourceTemplate decodes a runtime.RawExtension into a Flux source object for the actuator.
+func decodeActuatorSourceTemplate(raw *runtime.RawExtension) (runtime.Object, error) {
+	if raw == nil || raw.Raw == nil {
+		return nil, fmt.Errorf("template is required")
+	}
+
+	// Peek at TypeMeta to get GVK
+	typeMeta := &metav1.TypeMeta{}
+	if err := json.Unmarshal(raw.Raw, typeMeta); err != nil {
+		return nil, fmt.Errorf("failed to peek at GVK: %w", err)
+	}
+
+	gvk := typeMeta.GroupVersionKind()
+	if gvk.Kind == "" {
+		return nil, fmt.Errorf("could not find 'kind' in template")
+	}
+
+	// Decode into the specific type
+	obj, err := actuatorScheme.New(gvk)
+	if err != nil {
+		return nil, fmt.Errorf("unsupported source type %v: %w", gvk, err)
+	}
+
+	if err := runtime.DecodeInto(actuatorDecoder, raw.Raw, obj); err != nil {
+		return nil, fmt.Errorf("failed to decode into %v: %w", gvk, err)
+	}
+
+	return obj, nil
+}
+
 type actuator struct {
 	client  client.Client
 	decoder runtime.Decoder
@@ -67,6 +110,11 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	config, err := a.DecodeProviderConfig(ext.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("error decoding providerConfig: %w", err)
+	}
+
+	// Check if the deprecated source format was used and log a warning
+	if a.usesDeprecatedSourceFormat(ext.Spec.ProviderConfig) {
+		log.Info("DEPRECATED: Your configuration uses the old source format. Please migrate to the new format. See: https://github.com/stackitcloud/gardener-extension-shoot-flux#source-configuration-format-migration")
 	}
 
 	// TODO: add an admission component that validates the providerConfig when creating/updating Shoots
@@ -204,6 +252,31 @@ func (a *actuator) DecodeProviderConfig(rawExtension *runtime.RawExtension) (*fl
 	return config, nil
 }
 
+// usesDeprecatedSourceFormat checks if the providerConfig uses the old source format
+// (source.template instead of source.gitRepository or source.ociRepository).
+// This check is done on the raw JSON before defaulting/migration occurs.
+func (a *actuator) usesDeprecatedSourceFormat(rawExtension *runtime.RawExtension) bool {
+	if rawExtension == nil || rawExtension.Raw == nil {
+		return false
+	}
+
+	// Unmarshal the raw JSON to check for deprecated fields
+	// We use a map to avoid triggering defaulting
+	var raw map[string]interface{}
+	if err := json.Unmarshal(rawExtension.Raw, &raw); err != nil {
+		return false
+	}
+
+	// Check if source.template exists (old format)
+	if source, ok := raw["source"].(map[string]interface{}); ok {
+		if _, hasTemplate := source["template"]; hasTemplate {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsFluxBootstrapped checks whether Flux was bootstrapped successfully at least once by checking the bootstrapped
 // condition in the Extension status.
 func IsFluxBootstrapped(ext *extensionsv1alpha1.Extension) bool {
@@ -319,7 +392,7 @@ func GenerateInstallManifest(config *fluxv1alpha1.FluxInstallation, manifestsBas
 	return []byte(manifest.Content), nil
 }
 
-// BootstrapSource creates the GitRepository object specified in the given config and waits for it to get ready.
+// BootstrapSource creates the source object (GitRepository or OCIRepository) specified in the given config and waits for it to get ready.
 func BootstrapSource(
 	ctx context.Context,
 	log logr.Logger,
@@ -337,18 +410,47 @@ func bootstrapSource(
 	interval time.Duration,
 	timeout time.Duration,
 ) error {
+	if config.Template == nil {
+		return fmt.Errorf("source template is required")
+	}
+
+	// Decode the template to determine source type
+	obj, err := decodeActuatorSourceTemplate(config.Template)
+	if err != nil {
+		return fmt.Errorf("failed to decode source template: %w", err)
+	}
+
+	// Route to appropriate bootstrap function based on decoded type
+	switch sourceTemplate := obj.(type) {
+	case *sourcev1.GitRepository:
+		return bootstrapGitRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+	case *sourcev1.OCIRepository:
+		return bootstrapOCIRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+	default:
+		return fmt.Errorf("unsupported source type: %T", sourceTemplate)
+	}
+}
+
+func bootstrapGitRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	template *sourcev1.GitRepository,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
 	log.Info("Bootstrapping Flux GitRepository")
 
 	// Create Namespace in case the GitRepository is located in a different namespace than the Flux components.
-	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: template.Namespace}}
 	if err := shootClient.Create(ctx, namespace); client.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf("error creating %s namespace: %w", config.Template.Namespace, err)
+		return fmt.Errorf("error creating %s namespace: %w", template.Namespace, err)
 	}
 
 	// Create GitRepository
-	gitRepository := config.Template.DeepCopy()
+	gitRepository := template.DeepCopy()
 	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, gitRepository, func() error {
-		config.Template.Spec.DeepCopyInto(&gitRepository.Spec)
+		template.Spec.DeepCopyInto(&gitRepository.Spec)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error applying GitRepository template: %w", err)
@@ -360,6 +462,41 @@ func bootstrapSource(
 	}
 
 	log.Info("Successfully bootstrapped Flux GitRepository")
+
+	return nil
+}
+
+func bootstrapOCIRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	template *sourcev1.OCIRepository,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
+	log.Info("Bootstrapping Flux OCIRepository")
+
+	// Create Namespace in case the OCIRepository is located in a different namespace than the Flux components.
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: template.Namespace}}
+	if err := shootClient.Create(ctx, namespace); client.IgnoreAlreadyExists(err) != nil {
+		return fmt.Errorf("error creating %s namespace: %w", template.Namespace, err)
+	}
+
+	// Create OCIRepository
+	ociRepository := template.DeepCopy()
+	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, ociRepository, func() error {
+		template.Spec.DeepCopyInto(&ociRepository.Spec)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("error applying OCIRepository template: %w", err)
+	}
+
+	log.Info("Waiting for OCIRepository to get ready")
+	if err := WaitForObject(ctx, shootClient, ociRepository, interval, timeout, CheckFluxObject(ociRepository)); err != nil {
+		return fmt.Errorf("error waiting for OCIRepository to get ready: %w", err)
+	}
+
+	log.Info("Successfully bootstrapped Flux OCIRepository")
 
 	return nil
 }
