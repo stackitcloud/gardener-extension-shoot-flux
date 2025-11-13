@@ -358,8 +358,14 @@ The secret data from this resource is used to create the OCIRepository&rsquo;s c
 </p>
 <p>
 <p>Source configures how to bootstrap a Flux source object.
-For new configurations, use either GitRepository or OCIRepository.
-The old Template/SecretResourceName fields are deprecated but still supported for backwards compatibility.</p>
+For new configurations, use either GitRepository or OCIRepository.</p>
+<p>MIGRATION: Old configurations using &lsquo;template&rsquo; and &lsquo;secretResourceName&rsquo; fields
+are automatically migrated to the new &lsquo;gitRepository&rsquo; format during API processing.
+The old fields will be cleared after migration. Users should update their configs
+to use the new structure:</p>
+<pre><code>Old:  source: { template: {...}, secretResourceName: &quot;...&quot; }
+New:  source: { gitRepository: { template: {...}, secretResourceName: &quot;...&quot; } }
+</code></pre>
 </p>
 <table>
 <thead>
