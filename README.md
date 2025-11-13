@@ -62,6 +62,65 @@ Like the other resources (flux installation) provisioned by this configMap is no
 from the shoot cluster. This behaviour is intentional to keep the flux installation intact and allow the user to remove
 it in a controlled manner. Please be aware that the `configMap` is no longer updated when the extension is no longer active.
 
+## Source Configuration Format Migration
+
+**IMPORTANT:** The source configuration format has changed to support both Git and OCI repositories.
+
+### Old Format (Deprecated, but still supported)
+
+```yaml
+source:
+  template:
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: GitRepository
+    spec:
+      url: https://github.com/example/repo
+      ref:
+        branch: main
+  secretResourceName: my-git-credentials
+```
+
+### New Format (Recommended)
+
+For **Git repositories**:
+```yaml
+source:
+  gitRepository:
+    template:
+      apiVersion: source.toolkit.fluxcd.io/v1
+      kind: GitRepository
+      spec:
+        url: https://github.com/example/repo
+        ref:
+          branch: main
+    secretResourceName: my-git-credentials
+```
+
+For **OCI repositories**:
+```yaml
+source:
+  ociRepository:
+    template:
+      apiVersion: source.toolkit.fluxcd.io/v1beta2
+      kind: OCIRepository
+      spec:
+        url: oci://ghcr.io/example/manifests
+        ref:
+          tag: latest
+    secretResourceName: my-oci-credentials  # optional
+```
+
+### Migration
+
+The extension automatically migrates old format configurations to the new format during processing. However, **you should update your configurations** to use the new format to avoid deprecation warnings. The old format will be removed in a future version.
+
+**What changed:**
+- Old: `source.template` and `source.secretResourceName` at the root level
+- New: Nested under `source.gitRepository` or `source.ociRepository`
+
+**Why the change:**
+This change enables support for multiple source types (Git and OCI) while maintaining a clear, explicit configuration structure.
+
 # How to...
 
 ## Use it as a gardener operator

@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -67,6 +68,11 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ext *extensio
 	config, err := a.DecodeProviderConfig(ext.Spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("error decoding providerConfig: %w", err)
+	}
+
+	// Check if the deprecated source format was used and log a warning
+	if a.usesDeprecatedSourceFormat(ext.Spec.ProviderConfig) {
+		log.Info("DEPRECATED: Your configuration uses the old source format. Please migrate to the new format. See: https://github.com/stackitcloud/gardener-extension-shoot-flux#source-configuration-format-migration")
 	}
 
 	// TODO: add an admission component that validates the providerConfig when creating/updating Shoots
@@ -202,6 +208,31 @@ func (a *actuator) DecodeProviderConfig(rawExtension *runtime.RawExtension) (*fl
 		return nil, err
 	}
 	return config, nil
+}
+
+// usesDeprecatedSourceFormat checks if the providerConfig uses the old source format
+// (source.template instead of source.gitRepository or source.ociRepository).
+// This check is done on the raw JSON before defaulting/migration occurs.
+func (a *actuator) usesDeprecatedSourceFormat(rawExtension *runtime.RawExtension) bool {
+	if rawExtension == nil || rawExtension.Raw == nil {
+		return false
+	}
+
+	// Unmarshal the raw JSON to check for deprecated fields
+	// We use a map to avoid triggering defaulting
+	var raw map[string]interface{}
+	if err := json.Unmarshal(rawExtension.Raw, &raw); err != nil {
+		return false
+	}
+
+	// Check if source.template exists (old format)
+	if source, ok := raw["source"].(map[string]interface{}); ok {
+		if _, hasTemplate := source["template"]; hasTemplate {
+			return true
+		}
+	}
+
+	return false
 }
 
 // IsFluxBootstrapped checks whether Flux was bootstrapped successfully at least once by checking the bootstrapped
