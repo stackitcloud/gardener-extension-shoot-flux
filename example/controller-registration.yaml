@@ -1,0 +1,22 @@
+apiVersion: core.gardener.cloud/v1
+kind: ControllerDeployment
+metadata:
+  name: shoot-flux
+helm:
+  ociRepository:
+    repository: ghcr.io/stackitcloud/charts/gardener-extension-shoot-flux
+    tag: latest # latest tag does not exist. Use a specific version instead
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerRegistration
+metadata:
+  name: shoot-flux
+spec:
+  deployment:
+    deploymentRefs:
+    - name: shoot-flux
+  resources:
+  - kind: Extension
+    type: shoot-flux
+    lifecycle:
+      reconcile: AfterWorker

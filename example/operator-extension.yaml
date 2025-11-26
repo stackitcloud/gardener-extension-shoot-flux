@@ -13,4 +13,4 @@ spec:
       helm:
         ociRepository:
           repository: ghcr.io/stackitcloud/charts/gardener-extension-shoot-flux
-          tag: latest
+          tag: latest # latest tag does not exist. Use a specific version instead
