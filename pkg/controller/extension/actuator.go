@@ -303,20 +303,29 @@ func installFlux(
 // GenerateInstallManifest generates the Flux install manifest based on the given configuration just like
 // "flux install --export". manifestsBase can be set for tests.
 func GenerateInstallManifest(config *fluxv1alpha1.FluxInstallation, manifestsBase string) ([]byte, error) {
-	options := fluxinstall.MakeDefaultOptions()
-	options.Version = *config.Version
-	options.Namespace = *config.Namespace
-	options.Registry = *config.Registry
-
-	// don't deploy optional components
-	options.ComponentsExtra = nil
-
+	options := buildFluxInstallOptions(config)
 	manifest, err := fluxinstall.Generate(options, manifestsBase)
 	if err != nil {
 		return nil, err
 	}
 
 	return []byte(manifest.Content), nil
+}
+
+func buildFluxInstallOptions(config *fluxv1alpha1.FluxInstallation) fluxinstall.Options {
+	options := fluxinstall.MakeDefaultOptions()
+	options.Version = *config.Version
+	options.Namespace = *config.Namespace
+	options.Registry = *config.Registry
+
+	// as far as I can tell, ComponentsExtra is not really used in the Generate() code, just to be sure, we empty it,
+	// and append the ComponentsExtra ourselves.
+	options.ComponentsExtra = nil
+	if len(config.Components) > 0 {
+		options.Components = config.Components
+	}
+	options.Components = append(options.Components, config.ComponentsExtra...)
+	return options
 }
 
 // BootstrapSource creates the GitRepository object specified in the given config and waits for it to get ready.
