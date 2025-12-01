@@ -67,8 +67,8 @@ var _ = Describe("FluxConfig defaulting", func() {
 		})
 	})
 
-	Describe("Source defaulting", func() {
-		It("should default all standard fields for GitRepository", func() {
+	Describe("GitRepository Source defaulting", func() {
+		It("should default all standard fields", func() {
 			SetObjectDefaults_FluxConfig(obj)
 
 			// Decode to check defaults
@@ -124,8 +124,10 @@ var _ = Describe("FluxConfig defaulting", func() {
 			Expect(gitRepo.Name).To(Equal("flux-system"))
 			Expect(gitRepo.Namespace).To(Equal("flux-system"))
 		})
+	})
 
-		It("should default all standard fields for OCIRepository", func() {
+	Describe("OCIRepository Source defaulting", func() {
+		It("should default all standard fields", func() {
 			// Switch to OCI repository
 			ociRepo := &sourcev1.OCIRepository{
 				Spec: sourcev1.OCIRepositorySpec{
@@ -217,96 +219,6 @@ var _ = Describe("FluxConfig defaulting", func() {
 
 			Expect(ociRepoAfter.Name).To(Equal("flux-system"))
 			Expect(ociRepoAfter.Namespace).To(Equal("flux-system"))
-		})
-
-		// The new API format uses Source.Template (runtime.RawExtension) directly,
-		// no separate GitRepository/OCIRepository wrapper structs needed
-		It("should work with GitRepository encoded in Template", func() {
-			gitRepo := &sourcev1.GitRepository{
-				Spec: sourcev1.GitRepositorySpec{
-					Reference: &sourcev1.GitRepositoryRef{
-						Branch: "main",
-					},
-					URL: "https://github.com/example/repo",
-				},
-			}
-			obj.Source = &Source{
-				Template: encodeSourceTemplateForTest(gitRepo),
-			}
-
-			SetObjectDefaults_FluxConfig(obj)
-
-			// Verify defaults were applied
-			gitRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
-			Expect(gitRepoAfter.Spec.URL).To(Equal("https://github.com/example/repo"))
-			Expect(gitRepoAfter.Spec.Reference.Branch).To(Equal("main"))
-		})
-
-		It("should apply secretRef defaults when secretResourceName is set", func() {
-			gitRepo := &sourcev1.GitRepository{
-				Spec: sourcev1.GitRepositorySpec{
-					Reference: &sourcev1.GitRepositoryRef{
-						Branch: "main",
-					},
-					URL: "https://github.com/example/repo",
-				},
-			}
-			obj.Source = &Source{
-				Template:           encodeSourceTemplateForTest(gitRepo),
-				SecretResourceName: ptr.To("my-secret"),
-			}
-
-			SetObjectDefaults_FluxConfig(obj)
-
-			// Verify defaults were applied
-			gitRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
-			Expect(gitRepoAfter.Spec.URL).To(Equal("https://github.com/example/repo"))
-			Expect(gitRepoAfter.Spec.SecretRef).NotTo(BeNil())
-			Expect(gitRepoAfter.Spec.SecretRef.Name).To(Equal("flux-system"))
-		})
-
-		It("should not overwrite explicit secretRef.name", func() {
-			gitRepo := &sourcev1.GitRepository{
-				Spec: sourcev1.GitRepositorySpec{
-					Reference: &sourcev1.GitRepositoryRef{
-						Branch: "main",
-					},
-					URL:       "https://github.com/example/repo",
-					SecretRef: &meta.LocalObjectReference{Name: "my-custom-secret"},
-				},
-			}
-			obj.Source = &Source{
-				Template:           encodeSourceTemplateForTest(gitRepo),
-				SecretResourceName: ptr.To("my-secret"),
-			}
-
-			SetObjectDefaults_FluxConfig(obj)
-
-			// Verify custom secretRef was not overwritten
-			gitRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
-			Expect(gitRepoAfter.Spec.SecretRef.Name).To(Equal("my-custom-secret"))
-		})
-
-		It("should apply defaults to empty template", func() {
-			gitRepo := &sourcev1.GitRepository{
-				Spec: sourcev1.GitRepositorySpec{
-					Reference: &sourcev1.GitRepositoryRef{
-						Branch: "main",
-					},
-					URL: "https://github.com/example/repo",
-				},
-			}
-			obj.Source = &Source{
-				Template: encodeSourceTemplateForTest(gitRepo),
-			}
-
-			SetObjectDefaults_FluxConfig(obj)
-
-			// Should have defaults applied
-			gitRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
-			Expect(gitRepoAfter.Name).To(Equal("flux-system"))
-			Expect(gitRepoAfter.Namespace).To(Equal("flux-system"))
-			Expect(gitRepoAfter.Spec.Interval.Duration).To(Equal(time.Minute))
 		})
 	})
 
