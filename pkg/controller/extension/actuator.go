@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -35,6 +36,48 @@ import (
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
 )
+
+var (
+	// actuatorScheme is used for decoding source templates in the actuator
+	actuatorScheme  = runtime.NewScheme()
+	actuatorDecoder runtime.Decoder
+)
+
+func init() {
+	// Register Flux source types
+	_ = sourcev1.AddToScheme(actuatorScheme)
+	actuatorDecoder = serializer.NewCodecFactory(actuatorScheme).UniversalDeserializer()
+}
+
+// decodeActuatorSourceTemplate decodes a runtime.RawExtension into a Flux source object for the actuator.
+func decodeActuatorSourceTemplate(raw *runtime.RawExtension) (runtime.Object, error) {
+	if raw == nil || raw.Raw == nil {
+		return nil, fmt.Errorf("template is required")
+	}
+
+	// Peek at TypeMeta to get GVK
+	typeMeta := &metav1.TypeMeta{}
+	if err := json.Unmarshal(raw.Raw, typeMeta); err != nil {
+		return nil, fmt.Errorf("failed to peek at GVK: %w", err)
+	}
+
+	gvk := typeMeta.GroupVersionKind()
+	if gvk.Kind == "" {
+		return nil, fmt.Errorf("could not find 'kind' in template")
+	}
+
+	// Decode into the specific type
+	obj, err := actuatorScheme.New(gvk)
+	if err != nil {
+		return nil, fmt.Errorf("unsupported source type %v: %w", gvk, err)
+	}
+
+	if err := runtime.DecodeInto(actuatorDecoder, raw.Raw, obj); err != nil {
+		return nil, fmt.Errorf("failed to decode into %v: %w", gvk, err)
+	}
+
+	return obj, nil
+}
 
 type actuator struct {
 	client  client.Client
@@ -319,7 +362,7 @@ func GenerateInstallManifest(config *fluxv1alpha1.FluxInstallation, manifestsBas
 	return []byte(manifest.Content), nil
 }
 
-// BootstrapSource creates the GitRepository object specified in the given config and waits for it to get ready.
+// BootstrapSource creates the source object (GitRepository or OCIRepository) specified in the given config and waits for it to get ready.
 func BootstrapSource(
 	ctx context.Context,
 	log logr.Logger,
@@ -337,29 +380,105 @@ func bootstrapSource(
 	interval time.Duration,
 	timeout time.Duration,
 ) error {
-	log.Info("Bootstrapping Flux GitRepository")
+	if config.Template == nil {
+		return fmt.Errorf("source template is required")
+	}
 
-	// Create Namespace in case the GitRepository is located in a different namespace than the Flux components.
-	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
+	// Decode the template to determine source type
+	obj, err := decodeActuatorSourceTemplate(config.Template)
+	if err != nil {
+		return fmt.Errorf("failed to decode source template: %w", err)
+	}
+
+	// Route to appropriate bootstrap function based on decoded type
+	switch sourceTemplate := obj.(type) {
+	case *sourcev1.GitRepository:
+		return bootstrapGitRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+	case *sourcev1.OCIRepository:
+		return bootstrapOCIRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+	default:
+		return fmt.Errorf("unsupported source type: %T", sourceTemplate)
+	}
+}
+
+func bootstrapGitRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	template *sourcev1.GitRepository,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
+	gitRepository := template.DeepCopy()
+	return bootstrapSourceRepository(
+		ctx,
+		log,
+		shootClient,
+		gitRepository,
+		"GitRepository",
+		interval,
+		timeout,
+		func() error {
+			template.Spec.DeepCopyInto(&gitRepository.Spec)
+			return nil
+		},
+	)
+}
+
+func bootstrapOCIRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	template *sourcev1.OCIRepository,
+	interval time.Duration,
+	timeout time.Duration,
+) error {
+	ociRepository := template.DeepCopy()
+	return bootstrapSourceRepository(
+		ctx,
+		log,
+		shootClient,
+		ociRepository,
+		"OCIRepository",
+		interval,
+		timeout,
+		func() error {
+			template.Spec.DeepCopyInto(&ociRepository.Spec)
+			return nil
+		},
+	)
+}
+
+// bootstrapSourceRepository is a generic helper for bootstrapping Flux source repositories.
+func bootstrapSourceRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	obj client.Object,
+	resourceType string,
+	interval time.Duration,
+	timeout time.Duration,
+	mutateFn func() error,
+) error {
+	log.Info("Bootstrapping Flux " + resourceType)
+
+	// Create Namespace in case the source is located in a different namespace than the Flux components.
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: obj.GetNamespace()}}
 	if err := shootClient.Create(ctx, namespace); client.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf("error creating %s namespace: %w", config.Template.Namespace, err)
+		return fmt.Errorf("error creating %s namespace: %w", obj.GetNamespace(), err)
 	}
 
-	// Create GitRepository
-	gitRepository := config.Template.DeepCopy()
-	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, gitRepository, func() error {
-		config.Template.Spec.DeepCopyInto(&gitRepository.Spec)
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error applying GitRepository template: %w", err)
+	// Create or update the source repository
+	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, obj, mutateFn); err != nil {
+		return fmt.Errorf("error applying %s template: %w", resourceType, err)
 	}
 
-	log.Info("Waiting for GitRepository to get ready")
-	if err := WaitForObject(ctx, shootClient, gitRepository, interval, timeout, CheckFluxObject(gitRepository)); err != nil {
-		return fmt.Errorf("error waiting for GitRepository to get ready: %w", err)
+	log.Info("Waiting for " + resourceType + " to get ready")
+	if err := WaitForObject(ctx, shootClient, obj, interval, timeout, CheckFluxObject(obj)); err != nil {
+		return fmt.Errorf("error waiting for %s to get ready: %w", resourceType, err)
 	}
 
-	log.Info("Successfully bootstrapped Flux GitRepository")
+	log.Info("Successfully bootstrapped Flux " + resourceType)
 
 	return nil
 }

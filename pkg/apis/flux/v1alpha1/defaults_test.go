@@ -9,6 +9,8 @@ import (
 	. "github.com/gardener/gardener/pkg/utils/test/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/utils/ptr"
 )
 
@@ -16,16 +18,18 @@ var _ = Describe("FluxConfig defaulting", func() {
 	var obj *FluxConfig
 
 	BeforeEach(func() {
+		gitRepo := &sourcev1.GitRepository{
+			Spec: sourcev1.GitRepositorySpec{
+				Reference: &sourcev1.GitRepositoryRef{
+					Branch: "main",
+				},
+				URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
+			},
+		}
+
 		obj = &FluxConfig{
 			Source: &Source{
-				Template: sourcev1.GitRepository{
-					Spec: sourcev1.GitRepositorySpec{
-						Reference: &sourcev1.GitRepositoryRef{
-							Branch: "main",
-						},
-						URL: "https://github.com/fluxcd/flux2-kustomize-helm-example",
-					},
-				},
+				Template: encodeSourceTemplateForTest(gitRepo),
 			},
 			Kustomization: &Kustomization{
 				Template: kustomizev1.Kustomization{
@@ -42,9 +46,12 @@ var _ = Describe("FluxConfig defaulting", func() {
 
 		SetObjectDefaults_FluxConfig(obj)
 
-		Expect(obj.Source.Template.Spec.Reference).To(DeepEqual(before.Source.Template.Spec.Reference))
-		Expect(obj.Source.Template.Spec.URL).To(DeepEqual(before.Source.Template.Spec.URL))
-		Expect(obj.Source.Template.Spec.URL).To(DeepEqual(before.Source.Template.Spec.URL))
+		// Decode to check that required fields weren't overwritten
+		beforeGit := decodeSourceTemplateForTest(before.Source.Template).(*sourcev1.GitRepository)
+		afterGit := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
+
+		Expect(afterGit.Spec.Reference).To(DeepEqual(beforeGit.Spec.Reference))
+		Expect(afterGit.Spec.URL).To(DeepEqual(beforeGit.Spec.URL))
 		Expect(obj.Kustomization.Template.Spec.Path).To(DeepEqual(before.Kustomization.Template.Spec.Path))
 	})
 
@@ -60,13 +67,16 @@ var _ = Describe("FluxConfig defaulting", func() {
 		})
 	})
 
-	Describe("Source defaulting", func() {
+	Describe("GitRepository Source defaulting", func() {
 		It("should default all standard fields", func() {
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Name).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Namespace).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Spec.Interval.Duration).To(Equal(time.Minute))
+			// Decode to check defaults
+			gitRepo := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
+
+			Expect(gitRepo.Name).To(Equal("flux-system"))
+			Expect(gitRepo.Namespace).To(Equal("flux-system"))
+			Expect(gitRepo.Spec.Interval.Duration).To(Equal(time.Minute))
 		})
 
 		It("should default secretRef.name to flux-system if secretResourceName is set", func() {
@@ -74,26 +84,141 @@ var _ = Describe("FluxConfig defaulting", func() {
 
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Spec.SecretRef).NotTo(BeNil())
-			Expect(obj.Source.Template.Spec.SecretRef.Name).To(Equal("flux-system"))
+			// Decode to check defaults
+			gitRepo := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
+
+			Expect(gitRepo.Spec.SecretRef).NotTo(BeNil())
+			Expect(gitRepo.Spec.SecretRef.Name).To(Equal("flux-system"))
 		})
 
 		It("should not overwrite secretRef.name if secretResourceName is set", func() {
-			obj.Source.Template.Spec.SecretRef = &meta.LocalObjectReference{Name: "flux-secret"}
+			// Create GitRepository with explicit SecretRef
+			gitRepo := &sourcev1.GitRepository{
+				Spec: sourcev1.GitRepositorySpec{
+					Reference: &sourcev1.GitRepositoryRef{
+						Branch: "main",
+					},
+					URL:       "https://github.com/fluxcd/flux2-kustomize-helm-example",
+					SecretRef: &meta.LocalObjectReference{Name: "flux-secret"},
+				},
+			}
+			obj.Source.Template = encodeSourceTemplateForTest(gitRepo)
 			obj.Source.SecretResourceName = ptr.To("my-flux-secret")
 
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Spec.SecretRef).NotTo(BeNil())
-			Expect(obj.Source.Template.Spec.SecretRef.Name).To(Equal("flux-secret"))
+			// Decode to check defaults
+			gitRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
+
+			Expect(gitRepoAfter.Spec.SecretRef).NotTo(BeNil())
+			Expect(gitRepoAfter.Spec.SecretRef.Name).To(Equal("flux-secret"))
 		})
 
 		It("should handle if the kustomization is omitted", func() {
 			obj.Kustomization = nil
 			SetObjectDefaults_FluxConfig(obj)
 
-			Expect(obj.Source.Template.Name).To(Equal("flux-system"))
-			Expect(obj.Source.Template.Namespace).To(Equal("flux-system"))
+			// Decode to check defaults
+			gitRepo := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.GitRepository)
+
+			Expect(gitRepo.Name).To(Equal("flux-system"))
+			Expect(gitRepo.Namespace).To(Equal("flux-system"))
+		})
+	})
+
+	Describe("OCIRepository Source defaulting", func() {
+		It("should default all standard fields", func() {
+			// Switch to OCI repository
+			ociRepo := &sourcev1.OCIRepository{
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+				},
+			}
+			obj.Source = &Source{
+				Template: encodeSourceTemplateForTest(ociRepo),
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Decode to check defaults
+			ociRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.OCIRepository)
+
+			Expect(ociRepoAfter.Name).To(Equal("flux-system"))
+			Expect(ociRepoAfter.Namespace).To(Equal("flux-system"))
+			Expect(ociRepoAfter.Spec.Interval.Duration).To(Equal(time.Minute))
+		})
+
+		It("should default secretRef.name to flux-system for OCIRepository if secretResourceName is set", func() {
+			ociRepo := &sourcev1.OCIRepository{
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+				},
+			}
+			obj.Source = &Source{
+				Template:           encodeSourceTemplateForTest(ociRepo),
+				SecretResourceName: ptr.To("my-oci-secret"),
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Decode to check defaults
+			ociRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.OCIRepository)
+
+			Expect(ociRepoAfter.Spec.SecretRef).NotTo(BeNil())
+			Expect(ociRepoAfter.Spec.SecretRef.Name).To(Equal("flux-system"))
+		})
+
+		It("should not overwrite secretRef.name for OCIRepository if secretResourceName is set", func() {
+			ociRepo := &sourcev1.OCIRepository{
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+					SecretRef: &meta.LocalObjectReference{Name: "oci-secret"},
+				},
+			}
+			obj.Source = &Source{
+				Template:           encodeSourceTemplateForTest(ociRepo),
+				SecretResourceName: ptr.To("my-oci-secret"),
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Decode to check defaults
+			ociRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.OCIRepository)
+
+			Expect(ociRepoAfter.Spec.SecretRef).NotTo(BeNil())
+			Expect(ociRepoAfter.Spec.SecretRef.Name).To(Equal("oci-secret"))
+		})
+
+		It("should handle OCIRepository when kustomization is omitted", func() {
+			ociRepo := &sourcev1.OCIRepository{
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+				},
+			}
+			obj.Source = &Source{
+				Template: encodeSourceTemplateForTest(ociRepo),
+			}
+			obj.Kustomization = nil
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			// Decode to check defaults
+			ociRepoAfter := decodeSourceTemplateForTest(obj.Source.Template).(*sourcev1.OCIRepository)
+
+			Expect(ociRepoAfter.Name).To(Equal("flux-system"))
+			Expect(ociRepoAfter.Namespace).To(Equal("flux-system"))
 		})
 	})
 
@@ -113,3 +238,53 @@ var _ = Describe("FluxConfig defaulting", func() {
 		})
 	})
 })
+
+// Helper functions for encoding/decoding source templates in tests
+
+var (
+	// testScheme is used for encoding/decoding source templates in tests
+	testScheme  = runtime.NewScheme()
+	testEncoder runtime.Encoder
+	testDecoder runtime.Decoder
+)
+
+func init() {
+	// Register Flux source types for test encoding/decoding
+	_ = sourcev1.AddToScheme(testScheme)
+	codecFactory := serializer.NewCodecFactory(testScheme)
+	testEncoder = codecFactory.LegacyCodec(sourcev1.GroupVersion)
+	testDecoder = codecFactory.UniversalDeserializer()
+}
+
+// encodeSourceTemplateForTest encodes a Flux source object to runtime.RawExtension for use in tests.
+func encodeSourceTemplateForTest(obj runtime.Object) *runtime.RawExtension {
+	// Set the proper GVK if not already set
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Kind == "" {
+		kind := sourcev1.GitRepositoryKind
+		if _, ok := obj.(*sourcev1.OCIRepository); ok {
+			kind = sourcev1.OCIRepositoryKind
+		}
+		obj.GetObjectKind().SetGroupVersionKind(sourcev1.GroupVersion.WithKind(kind))
+	}
+
+	raw, err := runtime.Encode(testEncoder, obj)
+	if err != nil {
+		panic(err)
+	}
+
+	return &runtime.RawExtension{Raw: raw}
+}
+
+// decodeSourceTemplateForTest decodes a runtime.RawExtension into a Flux source object for testing.
+func decodeSourceTemplateForTest(raw *runtime.RawExtension) runtime.Object {
+	if raw == nil || raw.Raw == nil {
+		return nil
+	}
+
+	obj, _, err := testDecoder.Decode(raw.Raw, nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
