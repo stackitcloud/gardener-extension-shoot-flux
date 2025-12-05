@@ -182,6 +182,33 @@ string
 Defaults to &ldquo;flux-system&rdquo;.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>components</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Components allows overwriting the components that should be installed.
+See <a href="https://fluxcd.io/flux/installation/configuration/optional-components/">https://fluxcd.io/flux/installation/configuration/optional-components/</a> for a list of default
+components. The minimum required components are: source-controller,kustomize-controller</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentsExtra</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentsExtra is a list of extra components to install
+See <a href="https://fluxcd.io/flux/installation/configuration/optional-components/">https://fluxcd.io/flux/installation/configuration/optional-components/</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="flux.extensions.gardener.cloud/v1alpha1.Kustomization">Kustomization
