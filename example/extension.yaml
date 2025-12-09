@@ -12,9 +12,14 @@ spec:
       version: v2.1.2 # defaults to some current version, not latest!
       registry: ghcr.io/fluxcd
       namespace: flux-system
+      # components: ["helm-controller", "kustomize-controller", "source-controller"]
       componentsExtra:
       - source-watcher
+    # additionalSecretResources:
+    #   - name: shoot-vault-secret
+    #     targetName: vault
     source:
+      # secretResourceName: flux-ssh-secret
       template:
         apiVersion: source.toolkit.fluxcd.io/v1
         kind: GitRepository
@@ -24,13 +29,9 @@ spec:
           # secretRef:
           #  name: flux-system
           url: https://github.com/fluxcd/flux2-kustomize-helm-example
-          # secretResourceName: flux-ssh-secret
     kustomization:
       template:
         apiVersion: kustomize.toolkit.fluxcd.io/v1
         kind: Kustomization
         spec:
           path: clusters/production/flux-system
-    # additionalSecretResources:
-    #   - name: shoot-vault-secret
-    #     targetName: vault
