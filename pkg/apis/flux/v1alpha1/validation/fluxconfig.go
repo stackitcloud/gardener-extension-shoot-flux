@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"slices"
+
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -41,6 +43,8 @@ func ValidateFluxConfig(fluxConfig *fluxv1alpha1.FluxConfig, shoot *gardencorev1
 	return allErrs
 }
 
+var requiredComponents = []string{"kustomize-controller", "source-controller"}
+
 // ValidateFluxInstallation validates a FluxInstallation object.
 func ValidateFluxInstallation(fluxInstallation *fluxv1alpha1.FluxInstallation, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
@@ -48,6 +52,15 @@ func ValidateFluxInstallation(fluxInstallation *fluxv1alpha1.FluxInstallation, f
 	if namespace := fluxInstallation.Namespace; namespace != nil && *namespace != "" {
 		for _, msg := range apivalidation.ValidateNamespaceName(*namespace, false) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("namespace"), *namespace, msg))
+		}
+	}
+
+	if len(fluxInstallation.Components) > 0 {
+		wantedComponents := append(fluxInstallation.Components, fluxInstallation.ComponentsExtra...)
+		for _, requiredComponent := range requiredComponents {
+			if !slices.Contains(wantedComponents, requiredComponent) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("components"), fluxInstallation.Components, "missing required component "+requiredComponent))
+			}
 		}
 	}
 
