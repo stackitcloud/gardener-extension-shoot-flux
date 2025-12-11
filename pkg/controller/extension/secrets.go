@@ -108,11 +108,16 @@ func copySecretToShoot(
 
 	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
 		shootSecret.Data = maps.Clone(seedSecret.Data)
-		labels := maps.Clone(seedSecret.Labels)
-		if labels == nil {
-			labels = map[string]string{}
+		labels := map[string]string{
+			managedByLabelKey: managedByLabelValue,
 		}
-		labels[managedByLabelKey] = managedByLabelValue
+		if seedSecret.Annotations["gardener-extension-shoot-flux/copy-labels"] == "true" {
+			if seedSecret.Labels != nil {
+				for k, v := range seedSecret.Labels {
+					labels[k] = v
+				}
+			}
+		}
 		shootSecret.Labels = labels
 		return nil
 	})

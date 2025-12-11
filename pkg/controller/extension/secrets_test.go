@@ -66,6 +66,9 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ref-ssh",
 				Namespace: extNS,
+				Annotations: map[string]string{
+					"gardener-extension-shoot-flux/copy-labels": "true",
+				},
 				Labels: map[string]string{
 					"app.kubernetes.io/test": "true",
 				},				
@@ -78,6 +81,9 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ref-extra",
 				Namespace: extNS,
+				Labels: map[string]string{
+					"app.kubernetes.io/test": "true",
+				},
 			},
 			Data: map[string][]byte{
 				"foo": []byte("extra"),
@@ -111,6 +117,7 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 		}}
 		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(createdSecret), createdSecret)).To(Succeed())
 		Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("extra")))
+		Expect(createdSecret.Labels).NotTo(HaveKeyWithValue("app.kubernetes.io/test", "true"))
 	})
 
 	It("should change an existing secret", func() {
