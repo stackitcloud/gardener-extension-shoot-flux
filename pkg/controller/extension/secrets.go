@@ -111,7 +111,7 @@ func copySecretToShoot(
 		labels := map[string]string{
 			managedByLabelKey: managedByLabelValue,
 		}
-		if seedSecret.Annotations["gardener-extension-shoot-flux/copy-labels"] == "true" {
+		if shouldCopy,_ := strconv.ParseBool(seedSecret.Annotations["gardener-extension-shoot-flux/copy-labels"]); shouldCopy {
 			if seedSecret.Labels != nil {
 				for k, v := range seedSecret.Labels {
 					labels[k] = v
