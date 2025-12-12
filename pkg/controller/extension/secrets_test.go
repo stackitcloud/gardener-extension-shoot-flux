@@ -71,7 +71,7 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 				},
 				Labels: map[string]string{
 					"app.kubernetes.io/test": "true",
-				},				
+				},
 			},
 			Data: map[string][]byte{
 				"foo": []byte("ssh"),
