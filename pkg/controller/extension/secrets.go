@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"strconv"
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
@@ -108,9 +109,17 @@ func copySecretToShoot(
 
 	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
 		shootSecret.Data = maps.Clone(seedSecret.Data)
-		shootSecret.Labels = map[string]string{
+		labels := map[string]string{
 			managedByLabelKey: managedByLabelValue,
 		}
+		if shouldCopy, _ := strconv.ParseBool(seedSecret.Annotations["gardener-extension-shoot-flux/copy-labels"]); shouldCopy {
+			if seedSecret.Labels != nil {
+				for k, v := range seedSecret.Labels {
+					labels[k] = v
+				}
+			}
+		}
+		shootSecret.Labels = labels
 		return nil
 	})
 	if err != nil {
