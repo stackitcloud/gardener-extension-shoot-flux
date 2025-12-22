@@ -40,7 +40,7 @@ func ReconcileSecrets(
 	secretResources := config.AdditionalSecretResources
 	if config.Source != nil && config.Source.SecretResourceName != nil {
 		// Decode the source template to extract the secret reference name
-		if obj, err := decodeActuatorSourceTemplate(config.Source.Template); err == nil {
+		if obj, _, err := fluxv1alpha1.DecodeSourceTemplate(config.Source.Template); err == nil {
 			var secretRefName string
 			switch v := obj.(type) {
 			case *sourcev1.GitRepository:

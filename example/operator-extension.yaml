@@ -6,8 +6,8 @@ spec:
   resources:
   - kind: Extension
     type: shoot-flux
-    lifecycle:
-      reconcile: AfterWorker
+  lifecycle:
+    reconcile: AfterWorker
   deployment:
     extension:
       helm:

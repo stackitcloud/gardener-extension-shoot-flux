@@ -2,7 +2,6 @@ package extension
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -36,48 +35,6 @@ import (
 	fluxv1alpha1 "github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1"
 	"github.com/stackitcloud/gardener-extension-shoot-flux/pkg/apis/flux/v1alpha1/validation"
 )
-
-var (
-	// actuatorScheme is used for decoding source templates in the actuator
-	actuatorScheme  = runtime.NewScheme()
-	actuatorDecoder runtime.Decoder
-)
-
-func init() {
-	// Register Flux source types
-	_ = sourcev1.AddToScheme(actuatorScheme)
-	actuatorDecoder = serializer.NewCodecFactory(actuatorScheme).UniversalDeserializer()
-}
-
-// decodeActuatorSourceTemplate decodes a runtime.RawExtension into a Flux source object for the actuator.
-func decodeActuatorSourceTemplate(raw *runtime.RawExtension) (runtime.Object, error) {
-	if raw == nil || raw.Raw == nil {
-		return nil, fmt.Errorf("template is required")
-	}
-
-	// Peek at TypeMeta to get GVK
-	typeMeta := &metav1.TypeMeta{}
-	if err := json.Unmarshal(raw.Raw, typeMeta); err != nil {
-		return nil, fmt.Errorf("failed to peek at GVK: %w", err)
-	}
-
-	gvk := typeMeta.GroupVersionKind()
-	if gvk.Kind == "" {
-		return nil, fmt.Errorf("could not find 'kind' in template")
-	}
-
-	// Decode into the specific type
-	obj, err := actuatorScheme.New(gvk)
-	if err != nil {
-		return nil, fmt.Errorf("unsupported source type %v: %w", gvk, err)
-	}
-
-	if err := runtime.DecodeInto(actuatorDecoder, raw.Raw, obj); err != nil {
-		return nil, fmt.Errorf("failed to decode into %v: %w", gvk, err)
-	}
-
-	return obj, nil
-}
 
 type actuator struct {
 	client  client.Client
@@ -394,7 +351,7 @@ func bootstrapSource(
 	}
 
 	// Decode the template to determine source type
-	obj, err := decodeActuatorSourceTemplate(config.Template)
+	obj, _, err := fluxv1alpha1.DecodeSourceTemplate(config.Template)
 	if err != nil {
 		return fmt.Errorf("failed to decode source template: %w", err)
 	}
@@ -402,60 +359,38 @@ func bootstrapSource(
 	// Route to appropriate bootstrap function based on decoded type
 	switch sourceTemplate := obj.(type) {
 	case *sourcev1.GitRepository:
-		return bootstrapGitRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+		gitRepository := sourceTemplate.DeepCopy()
+		return bootstrapSourceRepository(
+			ctx,
+			log,
+			shootClient,
+			gitRepository,
+			"GitRepository",
+			interval,
+			timeout,
+			func() error {
+				sourceTemplate.Spec.DeepCopyInto(&gitRepository.Spec)
+				return nil
+			},
+		)
 	case *sourcev1.OCIRepository:
-		return bootstrapOCIRepository(ctx, log, shootClient, sourceTemplate, interval, timeout)
+		ociRepository := sourceTemplate.DeepCopy()
+		return bootstrapSourceRepository(
+			ctx,
+			log,
+			shootClient,
+			ociRepository,
+			"OCIRepository",
+			interval,
+			timeout,
+			func() error {
+				sourceTemplate.Spec.DeepCopyInto(&ociRepository.Spec)
+				return nil
+			},
+		)
 	default:
 		return fmt.Errorf("unsupported source type: %T", sourceTemplate)
 	}
-}
-
-func bootstrapGitRepository(
-	ctx context.Context,
-	log logr.Logger,
-	shootClient client.Client,
-	template *sourcev1.GitRepository,
-	interval time.Duration,
-	timeout time.Duration,
-) error {
-	gitRepository := template.DeepCopy()
-	return bootstrapSourceRepository(
-		ctx,
-		log,
-		shootClient,
-		gitRepository,
-		"GitRepository",
-		interval,
-		timeout,
-		func() error {
-			template.Spec.DeepCopyInto(&gitRepository.Spec)
-			return nil
-		},
-	)
-}
-
-func bootstrapOCIRepository(
-	ctx context.Context,
-	log logr.Logger,
-	shootClient client.Client,
-	template *sourcev1.OCIRepository,
-	interval time.Duration,
-	timeout time.Duration,
-) error {
-	ociRepository := template.DeepCopy()
-	return bootstrapSourceRepository(
-		ctx,
-		log,
-		shootClient,
-		ociRepository,
-		"OCIRepository",
-		interval,
-		timeout,
-		func() error {
-			template.Spec.DeepCopyInto(&ociRepository.Spec)
-			return nil
-		},
-	)
 }
 
 // bootstrapSourceRepository is a generic helper for bootstrapping Flux source repositories.
@@ -483,7 +418,11 @@ func bootstrapSourceRepository(
 	}
 
 	log.Info("Waiting for " + resourceType + " to get ready")
-	if err := WaitForObject(ctx, shootClient, obj, interval, timeout, CheckFluxObject(obj)); err != nil {
+	withMeta, ok := obj.(fluxmeta.ObjectWithConditions)
+	if !ok {
+		return fmt.Errorf("object does not implement ObjectWithConditions interface")
+	}
+	if err := WaitForObject(ctx, shootClient, obj, interval, timeout, CheckFluxObject(withMeta)); err != nil {
 		return fmt.Errorf("error waiting for %s to get ready: %w", resourceType, err)
 	}
 
