@@ -92,6 +92,7 @@ func newShootClient() client.Client {
 		WithStatusSubresource(
 			&kustomizev1.Kustomization{},
 			&sourcev1.GitRepository{},
+			&sourcev1.OCIRepository{},
 		).
 		Build()
 }
