@@ -12,7 +12,7 @@ import (
 
 var (
 	// sourceTemplateScheme is used for encoding/decoding source templates
-	sourceTemplateScheme = runtime.NewScheme()
+	sourceTemplateScheme  = runtime.NewScheme()
 	sourceTemplateDecoder runtime.Decoder
 	sourceTemplateEncoder runtime.Encoder
 )

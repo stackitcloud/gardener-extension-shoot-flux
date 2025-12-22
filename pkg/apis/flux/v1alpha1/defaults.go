@@ -26,13 +26,6 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
-// decodeSourceTemplateForDefaulting decodes a runtime.RawExtension into a Flux source object.
-// Returns the decoded object or nil if decoding fails (fails silently to not break defaulting).
-func decodeSourceTemplateForDefaulting(raw *runtime.RawExtension) runtime.Object {
-	obj, _, _ := DecodeSourceTemplate(raw)
-	return obj
-}
-
 func SetDefaults_FluxConfig(obj *FluxConfig) {
 	if obj.Flux == nil {
 		obj.Flux = &FluxInstallation{}
@@ -42,8 +35,8 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 	// are nil, but we have to handle all cases, since defaulting happens first.
 	if obj.Source != nil && obj.Kustomization != nil {
 		// Decode source template to get name and namespace
-		sourceObj := decodeSourceTemplateForDefaulting(obj.Source.Template)
-		if sourceObj != nil {
+		sourceObj, _, err := DecodeSourceTemplate(obj.Source.Template)
+		if err == nil {
 			clientObj := sourceObj.(client.Object)
 			sourceName := clientObj.GetName()
 			sourceNamespace := clientObj.GetNamespace()
@@ -60,8 +53,8 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 	if namespace := ptr.Deref(obj.Flux.Namespace, ""); namespace != "" {
 		if obj.Source != nil && obj.Source.Template != nil {
 			// Decode, update namespace if needed, re-encode
-			sourceObj := decodeSourceTemplateForDefaulting(obj.Source.Template)
-			if sourceObj != nil {
+			sourceObj, _, err := DecodeSourceTemplate(obj.Source.Template)
+			if err == nil {
 				clientObj := sourceObj.(client.Object)
 				if clientObj.GetNamespace() == "" {
 					clientObj.SetNamespace(namespace)
@@ -100,15 +93,16 @@ func SetDefaults_Source(obj *Source) {
 	}
 
 	// Decode the template
-	sourceObj := decodeSourceTemplateForDefaulting(obj.Template)
-	if sourceObj == nil {
+	sourceObj, _, err := DecodeSourceTemplate(obj.Template)
+	if err != nil {
 		return
 	}
+
+	oldSource := sourceObj.DeepCopyObject()
 
 	// Apply defaults based on source type
 	switch v := sourceObj.(type) {
 	case *sourcev1.GitRepository:
-		oldSource := v.DeepCopy()
 		SetDefaults_Flux_GitRepository(v)
 
 		// If secretResourceName is set but secretRef is not, create default secretRef
@@ -120,15 +114,7 @@ func SetDefaults_Source(obj *Source) {
 			}
 		}
 
-		// Re-encode if we modified the object
-		if !equality.Semantic.DeepEqual(oldSource, v) {
-			if encoded, err := encodeSourceTemplate(sourceObj); err == nil {
-				obj.Template = encoded
-			}
-		}
-
 	case *sourcev1.OCIRepository:
-		oldSource := v.DeepCopy()
 		SetDefaults_Flux_OCIRepository(v)
 
 		// If secretResourceName is set but secretRef is not, create default secretRef
@@ -139,12 +125,12 @@ func SetDefaults_Source(obj *Source) {
 				Name: "flux-system",
 			}
 		}
+	}
 
-		// Re-encode if we modified the object
-		if !equality.Semantic.DeepEqual(oldSource, v) {
-			if encoded, err := encodeSourceTemplate(sourceObj); err == nil {
-				obj.Template = encoded
-			}
+	// Re-encode if we modified the object
+	if !equality.Semantic.DeepEqual(oldSource, sourceObj) {
+		if encoded, err := encodeSourceTemplate(sourceObj); err == nil {
+			obj.Template = encoded
 		}
 	}
 }
