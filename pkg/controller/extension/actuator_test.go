@@ -251,6 +251,31 @@ var _ = Describe("GenerateInstallManifest", func() {
 	})
 })
 
+var _ = Describe("buildFluxInstallOptions", func() {
+	var config *fluxv1alpha1.FluxInstallation
+	BeforeEach(func() {
+		config = &fluxv1alpha1.FluxInstallation{
+			Version:   ptr.To("version"),
+			Registry:  ptr.To("reg"),
+			Namespace: ptr.To("ns"),
+		}
+	})
+	It("should use the default components", func() {
+		opts := buildFluxInstallOptions(config)
+		Expect(len(opts.Components)).To(BeNumerically(">", 1))
+	})
+	It("should add the extraComponents", func() {
+		config.ComponentsExtra = []string{"foo"}
+		opts := buildFluxInstallOptions(config)
+		Expect(opts.Components).To(ContainElement("foo"))
+	})
+	It("should overwrite the default components", func() {
+		config.Components = []string{"foo"}
+		opts := buildFluxInstallOptions(config)
+		Expect(opts.Components).To(ConsistOf("foo"))
+	})
+})
+
 var _ = Describe("ReconcileShootInfoConfigMap", func() {
 	var (
 		shootName       string

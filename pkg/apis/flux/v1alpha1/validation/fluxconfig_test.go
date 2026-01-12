@@ -80,6 +80,23 @@ var _ = Describe("FluxConfig validation", func() {
 				"Field": Equal("root.flux.namespace"),
 			}))))
 		})
+
+		It("should check if the required components are present", func() {
+			fluxConfig.Flux.Components = []string{"kustomize-controller", "foo-controller"}
+			fluxConfig.Flux.ComponentsExtra = []string{"source-controller"}
+			Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(BeEmpty())
+		})
+
+		It("should error if a required component is present", func() {
+			fluxConfig.Flux.Components = []string{"kustomize-controller"}
+			Expect(ValidateFluxConfig(fluxConfig, shoot, rootFldPath)).To(ConsistOf(
+				PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":   Equal(field.ErrorTypeInvalid),
+					"Field":  Equal("root.flux.components"),
+					"Detail": Equal("missing required component source-controller"),
+				})),
+			))
+		})
 	})
 
 	Describe("Source validation", func() {

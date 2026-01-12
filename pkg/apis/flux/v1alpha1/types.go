@@ -58,6 +58,17 @@ type FluxInstallation struct {
 	// Defaults to "flux-system".
 	// +optional
 	Namespace *string `json:"namespace,omitempty"`
+
+	// Components allows overwriting the components that should be installed.
+	// See https://fluxcd.io/flux/installation/configuration/optional-components/ for a list of default
+	// components. The minimum required components are: source-controller,kustomize-controller
+	// +optional
+	Components []string `json:"components,omitempty"`
+
+	// ComponentsExtra is a list of extra components to install
+	// See https://fluxcd.io/flux/installation/configuration/optional-components/
+	// +optional
+	ComponentsExtra []string `json:"componentsExtra,omitempty"`
 }
 
 // Source configures how to bootstrap a Flux source object.

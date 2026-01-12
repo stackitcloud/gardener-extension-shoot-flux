@@ -99,6 +99,16 @@ func (in *FluxInstallation) DeepCopyInto(out *FluxInstallation) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Components != nil {
+		in, out := &in.Components, &out.Components
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ComponentsExtra != nil {
+		in, out := &in.ComponentsExtra, &out.ComponentsExtra
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
