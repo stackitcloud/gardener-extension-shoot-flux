@@ -1,6 +1,6 @@
 module github.com/stackitcloud/gardener-extension-shoot-flux
 
-go 1.25.0
+go 1.25.3
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
