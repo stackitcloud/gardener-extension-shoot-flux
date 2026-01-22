@@ -6,7 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/fluxcd/flux2/v2 v2.7.5
 	github.com/fluxcd/kustomize-controller/api v1.7.3
-	github.com/fluxcd/pkg/apis/meta v1.24.0
+	github.com/fluxcd/pkg/apis/meta v1.25.0
 	github.com/fluxcd/source-controller/api v1.7.4
 	github.com/gardener/gardener v1.134.2
 	github.com/go-logr/logr v1.4.3
@@ -18,7 +18,7 @@ require (
 	golang.org/x/tools v0.41.0
 	k8s.io/api v0.34.3
 	k8s.io/apiextensions-apiserver v0.34.3
-	k8s.io/apimachinery v0.34.3
+	k8s.io/apimachinery v0.35.0
 	k8s.io/client-go v0.34.3
 	k8s.io/code-generator v0.34.3
 	k8s.io/component-base v0.34.3
@@ -192,7 +192,7 @@ require (
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-aggregator v0.34.3 // indirect
-	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
+	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/kubelet v0.34.3 // indirect
 	k8s.io/metrics v0.34.3 // indirect
 	sigs.k8s.io/controller-tools v0.19.0 // indirect
