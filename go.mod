@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.7.3
 	github.com/fluxcd/pkg/apis/meta v1.25.0
 	github.com/fluxcd/source-controller/api v1.7.4
-	github.com/gardener/gardener v1.134.2
+	github.com/gardener/gardener v1.134.3
 	github.com/go-logr/logr v1.4.3
 	github.com/ironcore-dev/vgopath v0.1.9
 	github.com/onsi/ginkgo/v2 v2.27.5
