@@ -10,7 +10,7 @@ require (
 	github.com/fluxcd/source-controller/api v1.7.4
 	github.com/gardener/gardener v1.135.0
 	github.com/go-logr/logr v1.4.3
-	github.com/ironcore-dev/vgopath v0.1.9
+	github.com/ironcore-dev/vgopath v0.1.10
 	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
 	github.com/spf13/cobra v1.10.2
