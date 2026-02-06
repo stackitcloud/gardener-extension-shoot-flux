@@ -255,7 +255,30 @@ The following defaults are applied to omitted field:
 <a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
 </p>
 <p>
-<p>Source configures how to bootstrap a Flux source object.</p>
+<p>Source configures how to bootstrap a Flux source object.
+Supported source types: GitRepository, OCIRepository.</p>
+<p>The Template field contains a raw Kubernetes object (GitRepository or OCIRepository).
+The kind field in the template determines which type is used.</p>
+<p>Example GitRepository:</p>
+<pre><code>source:
+template:
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+spec:
+url: https://github.com/example/repo
+ref:
+branch: main
+</code></pre>
+<p>Example OCIRepository:</p>
+<pre><code>source:
+template:
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+spec:
+url: oci://ghcr.io/example/repo
+ref:
+tag: latest
+</code></pre>
 </p>
 <table>
 <thead>
@@ -269,15 +292,17 @@ The following defaults are applied to omitted field:
 <td>
 <code>template</code></br>
 <em>
-<a href="https://fluxcd.io/flux/components/source/api/v1/#source.toolkit.fluxcd.io/v1.GitRepository">
-source.toolkit.fluxcd.io/v1.GitRepository
-</a>
+k8s.io/apimachinery/pkg/runtime.RawExtension
 </em>
 </td>
 <td>
-<p>Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
-Required fields: spec.ref.*, spec.url.
-The following defaults are applied to omitted field:
+<em>(Optional)</em>
+<p>Template contains a Flux source object (GitRepository or OCIRepository).
+The kind field determines which type is used.
+Required fields depend on the source type:
+- GitRepository: spec.ref.*, spec.url
+- OCIRepository: spec.ref, spec.url
+The following defaults are applied to omitted fields:
 - metadata.name is defaulted to &ldquo;flux-system&rdquo;
 - metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
 - spec.interval is defaulted to &ldquo;1m&rdquo;</p>
@@ -293,8 +318,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretResourceName references a resource under Shoot.spec.resources.
-The secret data from this resource is used to create the GitRepository&rsquo;s credentials secret
-(GitRepository.spec.secretRef.name) if specified in Template.</p>
+The secret data from this resource is used to create the source&rsquo;s credentials secret
+(spec.secretRef.name) if specified in Template.</p>
 </td>
 </tr>
 </tbody>

@@ -28,9 +28,13 @@ Please find more information regarding the extensibility concepts and a detailed
 <!-- markdown-toc end -->
 
 # What does this package provide?
-The general idea of this controller is to install the [fluxcd](https://fluxcd.io/) controllers together with a [flux gitrepository resource](https://fluxcd.io/docs/components/source/gitrepositories/) and a [flux kustomization resource](https://fluxcd.io/docs/components/kustomize/kustomization/) into newly created shoot clusters.
-In consequence, your fresh shoot cluster will be reconciled to the state defined in the Git repository by the fluxcd controllers.
+The general idea of this controller is to install the [fluxcd](https://fluxcd.io/) controllers together with a flux source resource ([GitRepository](https://fluxcd.io/docs/components/source/gitrepositories/) or [OCIRepository](https://fluxcd.io/flux/components/source/ocirepositories/)) and a [flux kustomization resource](https://fluxcd.io/docs/components/kustomize/kustomization/) into newly created shoot clusters.
+In consequence, your fresh shoot cluster will be reconciled to the state defined in the source repository (Git or OCI) by the fluxcd controllers.
 Thus, this extension provides a general approach to install addons to shoot clusters.
+
+**Source Types**:
+- **Git Repository**: Use traditional Git repositories (GitHub, GitLab, etc.) to store your Kubernetes manifests
+- **OCI Repository**: Use OCI-compliant container registries (ghcr.io, Docker Hub, etc.) to store pre-built manifests as OCI artifacts. This is particularly useful when using code generators like CUE, Jsonnet, or KCL in CI pipelines.
 
 ## Example use case
 Let's say you have a CI-workflow which needs a kubernetes cluster with some basic components, such as [cert-manager](https://cert-manager.io/) or [minio](https://min.io/).
@@ -57,6 +61,43 @@ in `Kustomizations`. The following information is provided:
 Like the other resources (flux installation) provisioned by this configMap is not deleted when the extension is removed
 from the shoot cluster. This behaviour is intentional to keep the flux installation intact and allow the user to remove
 it in a controlled manner. Please be aware that the `configMap` is no longer updated when the extension is no longer active.
+
+## Source Configuration Format
+
+The extension supports both **Git** and **OCI** repositories as Flux sources. The configuration uses a unified format where the source type is determined by the `apiVersion` and `kind` fields within the `template`.
+
+### Configuration Format
+
+For **Git repositories**:
+```yaml
+source:
+  template:
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: GitRepository
+    spec:
+      url: https://github.com/example/repo
+      ref:
+        branch: main
+  secretResourceName: my-git-credentials
+```
+
+For **OCI repositories**:
+```yaml
+source:
+  template:
+    apiVersion: source.toolkit.fluxcd.io/v1beta2
+    kind: OCIRepository
+    spec:
+      url: oci://ghcr.io/example/manifests
+      ref:
+        tag: latest
+  secretResourceName: my-oci-credentials  # optional
+```
+
+**Key Points:**
+- The `template` field directly contains the full source resource manifest with `apiVersion` and `kind`
+- The source type (Git or OCI) is automatically determined from the `kind` field
+- `secretResourceName` is optional and references a secret in the Seed cluster that will be synced to the Shoot
 
 # How to...
 

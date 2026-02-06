@@ -328,7 +328,7 @@ func buildFluxInstallOptions(config *fluxv1alpha1.FluxInstallation) fluxinstall.
 	return options
 }
 
-// BootstrapSource creates the GitRepository object specified in the given config and waits for it to get ready.
+// BootstrapSource creates the source object (GitRepository or OCIRepository) specified in the given config and waits for it to get ready.
 func BootstrapSource(
 	ctx context.Context,
 	log logr.Logger,
@@ -346,29 +346,87 @@ func bootstrapSource(
 	interval time.Duration,
 	timeout time.Duration,
 ) error {
-	log.Info("Bootstrapping Flux GitRepository")
+	if config.Template == nil {
+		return fmt.Errorf("source template is required")
+	}
 
-	// Create Namespace in case the GitRepository is located in a different namespace than the Flux components.
-	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: config.Template.Namespace}}
+	// Decode the template to determine source type
+	obj, _, err := fluxv1alpha1.DecodeSourceTemplate(config.Template)
+	if err != nil {
+		return fmt.Errorf("failed to decode source template: %w", err)
+	}
+
+	// Route to appropriate bootstrap function based on decoded type
+	switch sourceTemplate := obj.(type) {
+	case *sourcev1.GitRepository:
+		gitRepository := sourceTemplate.DeepCopy()
+		return bootstrapSourceRepository(
+			ctx,
+			log,
+			shootClient,
+			gitRepository,
+			"GitRepository",
+			interval,
+			timeout,
+			func() error {
+				sourceTemplate.Spec.DeepCopyInto(&gitRepository.Spec)
+				return nil
+			},
+		)
+	case *sourcev1.OCIRepository:
+		ociRepository := sourceTemplate.DeepCopy()
+		return bootstrapSourceRepository(
+			ctx,
+			log,
+			shootClient,
+			ociRepository,
+			"OCIRepository",
+			interval,
+			timeout,
+			func() error {
+				sourceTemplate.Spec.DeepCopyInto(&ociRepository.Spec)
+				return nil
+			},
+		)
+	default:
+		return fmt.Errorf("unsupported source type: %T", sourceTemplate)
+	}
+}
+
+// bootstrapSourceRepository is a generic helper for bootstrapping Flux source repositories.
+func bootstrapSourceRepository(
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	obj client.Object,
+	resourceType string,
+	interval time.Duration,
+	timeout time.Duration,
+	mutateFn func() error,
+) error {
+	log.Info("Bootstrapping Flux " + resourceType)
+
+	// Create Namespace in case the source is located in a different namespace than the Flux components.
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: obj.GetNamespace()}}
 	if err := shootClient.Create(ctx, namespace); client.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf("error creating %s namespace: %w", config.Template.Namespace, err)
+		return fmt.Errorf("error creating %s namespace: %w", obj.GetNamespace(), err)
 	}
 
-	// Create GitRepository
-	gitRepository := config.Template.DeepCopy()
-	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, gitRepository, func() error {
-		config.Template.Spec.DeepCopyInto(&gitRepository.Spec)
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error applying GitRepository template: %w", err)
+	// Create or update the source repository
+	if _, err := controllerutil.CreateOrUpdate(ctx, shootClient, obj, mutateFn); err != nil {
+		return fmt.Errorf("error applying %s template: %w", resourceType, err)
 	}
 
-	log.Info("Waiting for GitRepository to get ready")
-	if err := WaitForObject(ctx, shootClient, gitRepository, interval, timeout, CheckFluxObject(gitRepository)); err != nil {
-		return fmt.Errorf("error waiting for GitRepository to get ready: %w", err)
+	log.Info("Waiting for " + resourceType + " to get ready")
+	withMeta, ok := obj.(fluxmeta.ObjectWithConditions)
+	if !ok {
+		return fmt.Errorf("object does not implement ObjectWithConditions interface")
+	}
+	if err := WaitForObject(ctx, shootClient, obj, interval, timeout, CheckFluxObject(withMeta)); err != nil {
+		return fmt.Errorf("error waiting for %s to get ready: %w", resourceType, err)
 	}
 
-	log.Info("Successfully bootstrapped Flux GitRepository")
+	log.Info("Successfully bootstrapped Flux " + resourceType)
 
 	return nil
 }

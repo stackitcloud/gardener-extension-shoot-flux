@@ -6,6 +6,7 @@ import (
 	"maps"
 	"strconv"
 
+	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
@@ -38,10 +39,26 @@ func ReconcileSecrets(
 
 	secretResources := config.AdditionalSecretResources
 	if config.Source != nil && config.Source.SecretResourceName != nil {
-		secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
-			Name:       *config.Source.SecretResourceName,
-			TargetName: ptr.To(config.Source.Template.Spec.SecretRef.Name),
-		})
+		// Decode the source template to extract the secret reference name
+		if obj, _, err := fluxv1alpha1.DecodeSourceTemplate(config.Source.Template); err == nil {
+			var secretRefName string
+			switch v := obj.(type) {
+			case *sourcev1.GitRepository:
+				if v.Spec.SecretRef != nil {
+					secretRefName = v.Spec.SecretRef.Name
+				}
+			case *sourcev1.OCIRepository:
+				if v.Spec.SecretRef != nil {
+					secretRefName = v.Spec.SecretRef.Name
+				}
+			}
+			if secretRefName != "" {
+				secretResources = append(secretResources, fluxv1alpha1.AdditionalResource{
+					Name:       *config.Source.SecretResourceName,
+					TargetName: ptr.To(secretRefName),
+				})
+			}
+		}
 	}
 	for _, resource := range secretResources {
 		name, err := copySecretToShoot(ctx, log, seedClient, shootClient, seedNamespace, shootNamespace, resources, resource)

@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -72,17 +72,47 @@ type FluxInstallation struct {
 }
 
 // Source configures how to bootstrap a Flux source object.
+// Supported source types: GitRepository, OCIRepository.
+//
+// The Template field contains a raw Kubernetes object (GitRepository or OCIRepository).
+// The kind field in the template determines which type is used.
+//
+// Example GitRepository:
+//
+//	source:
+//	  template:
+//	    apiVersion: source.toolkit.fluxcd.io/v1
+//	    kind: GitRepository
+//	    spec:
+//	      url: https://github.com/example/repo
+//	      ref:
+//	        branch: main
+//
+// Example OCIRepository:
+//
+//	source:
+//	  template:
+//	    apiVersion: source.toolkit.fluxcd.io/v1beta2
+//	    kind: OCIRepository
+//	    spec:
+//	      url: oci://ghcr.io/example/repo
+//	      ref:
+//	        tag: latest
 type Source struct {
-	// Template is a partial GitRepository object in API version source.toolkit.fluxcd.io/v1.
-	// Required fields: spec.ref.*, spec.url.
-	// The following defaults are applied to omitted field:
+	// Template contains a Flux source object (GitRepository or OCIRepository).
+	// The kind field determines which type is used.
+	// Required fields depend on the source type:
+	// - GitRepository: spec.ref.*, spec.url
+	// - OCIRepository: spec.ref, spec.url
+	// The following defaults are applied to omitted fields:
 	// - metadata.name is defaulted to "flux-system"
 	// - metadata.namespace is defaulted to "flux-system"
 	// - spec.interval is defaulted to "1m"
-	Template sourcev1.GitRepository `json:"template"`
+	// +optional
+	Template *runtime.RawExtension `json:"template,omitempty"`
 	// SecretResourceName references a resource under Shoot.spec.resources.
-	// The secret data from this resource is used to create the GitRepository's credentials secret
-	// (GitRepository.spec.secretRef.name) if specified in Template.
+	// The secret data from this resource is used to create the source's credentials secret
+	// (spec.secretRef.name) if specified in Template.
 	// +optional
 	SecretResourceName *string `json:"secretResourceName,omitempty"`
 }
