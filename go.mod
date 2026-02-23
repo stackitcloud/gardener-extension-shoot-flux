@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.7.3
 	github.com/fluxcd/pkg/apis/meta v1.25.0
 	github.com/fluxcd/source-controller/api v1.7.4
-	github.com/gardener/gardener v1.135.1
+	github.com/gardener/gardener v1.135.3
 	github.com/go-logr/logr v1.4.3
 	github.com/ironcore-dev/vgopath v0.1.10
 	github.com/onsi/ginkgo/v2 v2.27.5
@@ -16,12 +16,12 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/tools v0.41.0
-	k8s.io/api v0.34.3
-	k8s.io/apiextensions-apiserver v0.34.3
-	k8s.io/apimachinery v0.35.0
-	k8s.io/client-go v0.34.3
-	k8s.io/code-generator v0.34.3
-	k8s.io/component-base v0.34.3
+	k8s.io/api v0.34.4
+	k8s.io/apiextensions-apiserver v0.34.4
+	k8s.io/apimachinery v0.35.1
+	k8s.io/client-go v0.34.4
+	k8s.io/code-generator v0.34.4
+	k8s.io/component-base v0.34.4
 	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	sigs.k8s.io/controller-runtime v0.22.5
 )
@@ -58,7 +58,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/gardener/cert-management v0.19.0 // indirect
 	github.com/gardener/etcd-druid/api v0.34.0 // indirect
-	github.com/gardener/machine-controller-manager v0.60.2 // indirect
+	github.com/gardener/machine-controller-manager v0.60.3 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
