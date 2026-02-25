@@ -142,6 +142,42 @@ var _ = Describe("ReconcileSecrets", Ordered, func() {
 		Expect(createdSecret.Data).To(HaveKeyWithValue("foo", []byte("extra")))
 	})
 
+	It("should preserve the secret type when copying to the shoot", func() {
+		Expect(seedClient.Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ref-registry",
+				Namespace: extNS,
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: []byte(`{"auths":{"https://index.docker.io/v1/":{"username":"foo","password":"bar","auth":"Zm9vOmJhcg=="}}}`),
+			},
+		})).To(Succeed())
+
+		resources = append(resources, gardencorev1beta1.NamedResourceReference{
+			Name: "registry-secret",
+			ResourceRef: autoscalingv1.CrossVersionObjectReference{
+				Name: "registry",
+				Kind: "Secret",
+			},
+		})
+		config.AdditionalSecretResources = append(config.AdditionalSecretResources, fluxv1alpha1.AdditionalResource{
+			Name: "registry-secret",
+		})
+
+		Expect(
+			ReconcileSecrets(ctx, log, seedClient, shootClient, extNS, config, resources),
+		).To(Succeed())
+
+		createdSecret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+			Name:      "registry",
+			Namespace: "flux-system",
+		}}
+		Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(createdSecret), createdSecret)).To(Succeed())
+		Expect(createdSecret.Type).To(Equal(corev1.SecretTypeDockerConfigJson))
+		Expect(createdSecret.Data).To(HaveKey(corev1.DockerConfigJsonKey))
+	})
+
 	It("should respect the target name and clean up the old secret", func() {
 		config.AdditionalSecretResources[0].TargetName = ptr.To("surprise")
 		Expect(

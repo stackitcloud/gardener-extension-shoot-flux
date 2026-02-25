@@ -126,6 +126,7 @@ func copySecretToShoot(
 
 	result, err := controllerutil.CreateOrUpdate(ctx, shootClient, shootSecret, func() error {
 		shootSecret.Data = maps.Clone(seedSecret.Data)
+		shootSecret.Type = seedSecret.Type
 		labels := map[string]string{
 			managedByLabelKey: managedByLabelValue,
 		}
