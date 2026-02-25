@@ -4,6 +4,9 @@
     'config:recommended',
     ':semanticCommitsDisabled',
   ],
+  additionalReviewers: [
+    'team:ske-gardener',
+  ],
   dependencyDashboard: true,
   postUpdateOptions: [
     'gomodTidy',
@@ -13,10 +16,6 @@
   ],
   separateMinorPatch: true,
   commitMessagePrefix: '🤖 ',
-  additionalReviewers: [
-    'timebertt',
-    'maboehm',
-  ],
   customManagers: [
     {
       customType: 'regex',
