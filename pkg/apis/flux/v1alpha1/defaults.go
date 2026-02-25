@@ -34,13 +34,16 @@ func SetDefaults_FluxConfig(obj *FluxConfig) {
 	// validation will ensure that both Source & Kustomization are set or both
 	// are nil, but we have to handle all cases, since defaulting happens first.
 	if obj.Source != nil && obj.Kustomization != nil {
-		// Decode source template to get name and namespace
-		sourceObj, _, err := DecodeSourceTemplate(obj.Source.Template)
+		// Decode source template to get name, namespace, and kind
+		sourceObj, sourceKind, err := DecodeSourceTemplate(obj.Source.Template)
 		if err == nil {
 			clientObj := sourceObj.(client.Object)
 			sourceName := clientObj.GetName()
 			sourceNamespace := clientObj.GetNamespace()
 
+			if obj.Kustomization.Template.Spec.SourceRef.Kind == "" && sourceKind != "" {
+				obj.Kustomization.Template.Spec.SourceRef.Kind = sourceKind
+			}
 			if obj.Kustomization.Template.Spec.SourceRef.Name == "" && sourceName != "" {
 				obj.Kustomization.Template.Spec.SourceRef.Name = sourceName
 			}
