@@ -236,6 +236,28 @@ var _ = Describe("FluxConfig defaulting", func() {
 			Expect(obj.Kustomization.Template.Name).To(Equal("flux-system"))
 			Expect(obj.Kustomization.Template.Namespace).To(Equal("flux-system"))
 		})
+		It("should set SourceRef.Kind to GitRepository for a GitRepository source", func() {
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Kustomization.Template.Spec.SourceRef.Kind).To(Equal(sourcev1.GitRepositoryKind))
+		})
+		It("should set SourceRef.Kind to OCIRepository for an OCIRepository source", func() {
+			ociRepo := &sourcev1.OCIRepository{
+				Spec: sourcev1.OCIRepositorySpec{
+					URL: "oci://ghcr.io/example/manifests",
+					Reference: &sourcev1.OCIRepositoryRef{
+						Tag: "v1.0.0",
+					},
+				},
+			}
+			obj.Source = &Source{
+				Template: encodeSourceTemplateForTest(ociRepo),
+			}
+
+			SetObjectDefaults_FluxConfig(obj)
+
+			Expect(obj.Kustomization.Template.Spec.SourceRef.Kind).To(Equal(sourcev1.OCIRepositoryKind))
+		})
 	})
 })
 
