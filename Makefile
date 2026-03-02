@@ -90,8 +90,7 @@ check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
 	@bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
 
 .PHONY: generate
-generate: $(VGOPATH) $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM)
-	@VGOPATH=$(VGOPATH) \
+generate: $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM)
 	REPO_ROOT=$(REPO_ROOT) \
 	GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) \
 	bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
