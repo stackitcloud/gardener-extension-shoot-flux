@@ -16,6 +16,8 @@ LD_FLAGS                    := -w $(shell EFFECTIVE_VERSION=$(VERSION) bash $(GA
 LEADER_ELECTION             := false
 IGNORE_OPERATION_ANNOTATION := false
 
+export CGO_ENABLED=0
+
 SHELL=/usr/bin/env bash -o pipefail
 
 #########################################
