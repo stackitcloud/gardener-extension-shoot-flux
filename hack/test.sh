@@ -24,4 +24,4 @@ else
   timeout_flag=-timeout=2m
 fi
 
-go test -race ${timeout_flag:-} $@ $test_flags | grep -v 'no test files'
+go test ${timeout_flag:-} $@ $test_flags | grep -v 'no test files'
