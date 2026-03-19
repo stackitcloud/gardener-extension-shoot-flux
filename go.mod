@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/fluxcd/flux2/v2 v2.8.2
+	github.com/fluxcd/flux2/v2 v2.8.3
 	github.com/fluxcd/kustomize-controller/api v1.8.2
 	github.com/fluxcd/pkg/apis/meta v1.26.0
 	github.com/fluxcd/source-controller/api v1.8.1
