@@ -58,6 +58,7 @@
         'patch',
       ],
       automerge: true,
+      reviewers: [],
     },
     {
       groupName: 'fluxcd',
@@ -82,6 +83,7 @@
         'patch',
       ],
       automerge: true,
+      reviewers: [],
     },
     {
       groupName: 'k8s and gardener packages',
@@ -176,6 +178,7 @@
         'digest',
       ],
       automerge: true,
+      reviewers: [],
     }
   ],
 }
