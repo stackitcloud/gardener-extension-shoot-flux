@@ -4,10 +4,10 @@ go 1.26.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/fluxcd/flux2/v2 v2.8.3
-	github.com/fluxcd/kustomize-controller/api v1.8.2
+	github.com/fluxcd/flux2/v2 v2.8.5
+	github.com/fluxcd/kustomize-controller/api v1.8.3
 	github.com/fluxcd/pkg/apis/meta v1.26.0
-	github.com/fluxcd/source-controller/api v1.8.1
+	github.com/fluxcd/source-controller/api v1.8.2
 	github.com/gardener/gardener v1.139.1
 	github.com/gardener/gardener/pkg/apis v1.139.1
 	github.com/go-logr/logr v1.4.3
@@ -72,7 +72,7 @@ require (
 	github.com/fluent/fluent-operator/v3 v3.7.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.9.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v1.15.1 // indirect
-	github.com/fluxcd/pkg/kustomize v1.27.1 // indirect
+	github.com/fluxcd/pkg/kustomize v1.27.2 // indirect
 	github.com/fluxcd/pkg/tar v0.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
