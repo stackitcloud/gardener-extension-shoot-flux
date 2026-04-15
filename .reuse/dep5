@@ -35,10 +35,6 @@ License: CC-BY-4.0
 # --------------------------------------------------
 # source dependencies
 
-Files: vendor/github.com/ahmetb/gen-crd-api-reference-docs/*
-Copyright: n/a
-License: Apache-2.0
-
 Files: vendor/github.com/beorn7/perks/*
 Copyright: Copyright 2012-2015 The Prometheus Authors
 Copyright: Copyright 2013-2015 Blake Mizerany, Bjorn Rabenstein

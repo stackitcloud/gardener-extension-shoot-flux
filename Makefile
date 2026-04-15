@@ -92,11 +92,11 @@ check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
 	@bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
 
 .PHONY: generate
-generate: $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM)
+generate: $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(CRD_REF_DOCS) $(HELM)
 	REPO_ROOT=$(REPO_ROOT) \
 	GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) \
 	bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
-	@gen-crd-api-reference-docs -api-dir ./pkg/apis/flux/v1alpha1 -config ./hack/api-reference/api.json -template-dir $(GARDENER_HACK_DIR)/api-reference/template -out-file ./hack/api-reference/api.md
+	$(CRD_REF_DOCS) --source-path ./pkg/apis/flux/v1alpha1 --config ./hack/api-reference/api.yaml --renderer=markdown --templates-dir $(GARDENER_HACK_DIR)/api-reference/template --log-level=ERROR --output-path ./hack/api-reference/api.md
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER)

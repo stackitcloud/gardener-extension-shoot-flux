@@ -4,18 +4,24 @@
 <a href="#flux.extensions.gardener.cloud%2fv1alpha1">flux.extensions.gardener.cloud/v1alpha1</a>
 </li>
 </ul>
+
 <h2 id="flux.extensions.gardener.cloud/v1alpha1">flux.extensions.gardener.cloud/v1alpha1</h2>
-Resource Types:
-<ul></ul>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.AdditionalResource">AdditionalResource
+<p>
+
+</p>
+
+<h3 id="additionalresource">AdditionalResource
 </h3>
+
+
 <p>
-(<em>Appears on:</em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+(<em>Appears on:</em><a href="#fluxconfig">FluxConfig</a>)
 </p>
+
 <p>
-<p>AdditionalResource to sync to the shoot.</p>
+AdditionalResource to sync to the shoot.
 </p>
+
 <table>
 <thead>
 <tr>
@@ -24,6 +30,7 @@ Resource Types:
 </tr>
 </thead>
 <tbody>
+
 <tr>
 <td>
 <code>name</code></br>
@@ -47,15 +54,21 @@ string
 <p>TargetName optionally overwrites the name of the secret in the shoot.</p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig
+
+
+<h3 id="fluxconfig">FluxConfig
 </h3>
+
+
 <p>
-<p>FluxConfig specifies how to bootstrap Flux on the shoot cluster.
-When both &ldquo;Source&rdquo; and &ldquo;Kustomization&rdquo; are provided they are also installed in the shoot.
-Otherwise, only Flux itself is installed with no Objects to reconcile.</p>
+FluxConfig specifies how to bootstrap Flux on the shoot cluster.
+When both "Source" and "Kustomization" are provided they are also installed in the shoot.
+Otherwise, only Flux itself is installed with no Objects to reconcile.
 </p>
+
 <table>
 <thead>
 <tr>
@@ -64,13 +77,12 @@ Otherwise, only Flux itself is installed with no Objects to reconcile.</p>
 </tr>
 </thead>
 <tbody>
+
 <tr>
 <td>
 <code>flux</code></br>
 <em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxInstallation">
-FluxInstallation
-</a>
+<a href="#fluxinstallation">FluxInstallation</a>
 </em>
 </td>
 <td>
@@ -82,59 +94,55 @@ FluxInstallation
 <td>
 <code>source</code></br>
 <em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.Source">
-Source
-</a>
+<a href="#source">Source</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Source configures how to bootstrap a Flux source object.
-If provided, a &ldquo;Kustomization&rdquo; must also be provided.</p>
+<p>Source configures how to bootstrap a Flux source object.<br />If provided, a "Kustomization" must also be provided.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>kustomization</code></br>
 <em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.Kustomization">
-Kustomization
-</a>
+<a href="#kustomization">Kustomization</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Kustomization configures how to bootstrap a Flux Kustomization object.
-If provided, &ldquo;Source&rdquo; must also be provided.</p>
+<p>Kustomization configures how to bootstrap a Flux Kustomization object.<br />If provided, "Source" must also be provided.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>additionalSecretResources</code></br>
 <em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.AdditionalResource">
-[]AdditionalResource
-</a>
+<a href="#additionalresource">AdditionalResource</a> array
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>AdditionalSecretResources to sync to the shoot.
-Secrets referenced here are only created if they don&rsquo;t exist in the shoot yet.
-When a secret is removed from this list, it is deleted in the shoot.</p>
+<p>AdditionalSecretResources to sync to the shoot.<br />Secrets referenced here are only created if they don't exist in the shoot yet.<br />When a secret is removed from this list, it is deleted in the shoot.</p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.FluxInstallation">FluxInstallation
+
+
+<h3 id="fluxinstallation">FluxInstallation
 </h3>
+
+
 <p>
-(<em>Appears on:</em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+(<em>Appears on:</em><a href="#fluxconfig">FluxConfig</a>)
 </p>
+
 <p>
-<p>FluxInstallation configures the Flux installation in the Shoot cluster.</p>
+FluxInstallation configures the Flux installation in the Shoot cluster.
 </p>
+
 <table>
 <thead>
 <tr>
@@ -143,6 +151,7 @@ When a secret is removed from this list, it is deleted in the shoot.</p>
 </tr>
 </thead>
 <tbody>
+
 <tr>
 <td>
 <code>version</code></br>
@@ -152,8 +161,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Version specifies the Flux version that should be installed.
-Defaults to &ldquo;v2.8.5&rdquo;.</p>
+<p>Version specifies the Flux version that should be installed.<br />Defaults to "v2.8.5".</p>
 </td>
 </tr>
 <tr>
@@ -165,8 +173,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Registry specifies the container registry where the Flux controller images are pulled from.
-Defaults to &ldquo;ghcr.io/fluxcd&rdquo;.</p>
+<p>Registry specifies the container registry where the Flux controller images are pulled from.<br />Defaults to "ghcr.io/fluxcd".</p>
 </td>
 </tr>
 <tr>
@@ -178,48 +185,50 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Namespace specifes the namespace where Flux should be installed.
-Defaults to &ldquo;flux-system&rdquo;.</p>
+<p>Namespace specifes the namespace where Flux should be installed.<br />Defaults to "flux-system".</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>components</code></br>
 <em>
-[]string
+string array
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Components allows overwriting the components that should be installed.
-See <a href="https://fluxcd.io/flux/installation/configuration/optional-components/">https://fluxcd.io/flux/installation/configuration/optional-components/</a> for a list of default
-components. The minimum required components are: source-controller,kustomize-controller</p>
+<p>Components allows overwriting the components that should be installed.<br />See https://fluxcd.io/flux/installation/configuration/optional-components/ for a list of default<br />components. The minimum required components are: source-controller,kustomize-controller</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>componentsExtra</code></br>
 <em>
-[]string
+string array
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ComponentsExtra is a list of extra components to install
-See <a href="https://fluxcd.io/flux/installation/configuration/optional-components/">https://fluxcd.io/flux/installation/configuration/optional-components/</a></p>
+<p>ComponentsExtra is a list of extra components to install<br />See https://fluxcd.io/flux/installation/configuration/optional-components/</p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.Kustomization">Kustomization
+
+
+<h3 id="kustomization">Kustomization
 </h3>
+
+
 <p>
-(<em>Appears on:</em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+(<em>Appears on:</em><a href="#fluxconfig">FluxConfig</a>)
 </p>
+
 <p>
-<p>Kustomization configures how to bootstrap a Flux Kustomization object.</p>
+Kustomization configures how to bootstrap a Flux Kustomization object.
 </p>
+
 <table>
 <thead>
 <tr>
@@ -228,58 +237,61 @@ See <a href="https://fluxcd.io/flux/installation/configuration/optional-componen
 </tr>
 </thead>
 <tbody>
+
 <tr>
 <td>
 <code>template</code></br>
 <em>
-<a href="https://fluxcd.io/flux/components/kustomize/api/v1/#kustomize.toolkit.fluxcd.io/v1.Kustomization">
-kustomize.toolkit.fluxcd.io/v1.Kustomization
-</a>
+<a href="https://fluxcd.io/flux/components/kustomize/api/v1/#kustomize.toolkit.fluxcd.io/v1.Kustomization">Kustomization</a>
 </em>
 </td>
 <td>
-<p>Template is a partial Kustomization object in API version kustomize.toolkit.fluxcd.io/v1.
-Required fields: spec.path.
-The following defaults are applied to omitted field:
-- metadata.name is defaulted to &ldquo;flux-system&rdquo;
-- metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
-- spec.interval is defaulted to &ldquo;1m&rdquo;</p>
+<p>Template is a partial Kustomization object in API version kustomize.toolkit.fluxcd.io/v1.<br />Required fields: spec.path.<br />The following defaults are applied to omitted field:<br />- metadata.name is defaulted to "flux-system"<br />- metadata.namespace is defaulted to "flux-system"<br />- spec.interval is defaulted to "1m"</p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<h3 id="flux.extensions.gardener.cloud/v1alpha1.Source">Source
+
+
+<h3 id="source">Source
 </h3>
+
+
 <p>
-(<em>Appears on:</em>
-<a href="#flux.extensions.gardener.cloud/v1alpha1.FluxConfig">FluxConfig</a>)
+(<em>Appears on:</em><a href="#fluxconfig">FluxConfig</a>)
 </p>
+
 <p>
-<p>Source configures how to bootstrap a Flux source object.
-Supported source types: GitRepository, OCIRepository.</p>
-<p>The Template field contains a raw Kubernetes object (GitRepository or OCIRepository).
-The kind field in the template determines which type is used.</p>
-<p>Example GitRepository:</p>
-<pre><code>source:
-template:
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-spec:
-url: https://github.com/example/repo
-ref:
-branch: main
-</code></pre>
-<p>Example OCIRepository:</p>
-<pre><code>source:
-template:
-apiVersion: source.toolkit.fluxcd.io/v1beta2
-kind: OCIRepository
-spec:
-url: oci://ghcr.io/example/repo
-ref:
-tag: latest
-</code></pre>
+Source configures how to bootstrap a Flux source object.
+Supported source types: GitRepository, OCIRepository.
+
+The Template field contains a raw Kubernetes object (GitRepository or OCIRepository).
+The kind field in the template determines which type is used.
+
+Example GitRepository:
+
+	source:
+	  template:
+	    apiVersion: source.toolkit.fluxcd.io/v1
+	    kind: GitRepository
+	    spec:
+	      url: https://github.com/example/repo
+	      ref:
+	        branch: main
+
+Example OCIRepository:
+
+	source:
+	  template:
+	    apiVersion: source.toolkit.fluxcd.io/v1beta2
+	    kind: OCIRepository
+	    spec:
+	      url: oci://ghcr.io/example/repo
+	      ref:
+	        tag: latest
 </p>
+
 <table>
 <thead>
 <tr>
@@ -288,24 +300,17 @@ tag: latest
 </tr>
 </thead>
 <tbody>
+
 <tr>
 <td>
 <code>template</code></br>
 <em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#rawextension-runtime-pkg">RawExtension</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Template contains a Flux source object (GitRepository or OCIRepository).
-The kind field determines which type is used.
-Required fields depend on the source type:
-- GitRepository: spec.ref.*, spec.url
-- OCIRepository: spec.ref, spec.url
-The following defaults are applied to omitted fields:
-- metadata.name is defaulted to &ldquo;flux-system&rdquo;
-- metadata.namespace is defaulted to &ldquo;flux-system&rdquo;
-- spec.interval is defaulted to &ldquo;1m&rdquo;</p>
+<p>Template contains a Flux source object (GitRepository or OCIRepository).<br />The kind field determines which type is used.<br />Required fields depend on the source type:<br />- GitRepository: spec.ref.*, spec.url<br />- OCIRepository: spec.ref, spec.url<br />The following defaults are applied to omitted fields:<br />- metadata.name is defaulted to "flux-system"<br />- metadata.namespace is defaulted to "flux-system"<br />- spec.interval is defaulted to "1m"</p>
 </td>
 </tr>
 <tr>
@@ -317,14 +322,11 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>SecretResourceName references a resource under Shoot.spec.resources.
-The secret data from this resource is used to create the source&rsquo;s credentials secret
-(spec.secretRef.name) if specified in Template.</p>
+<p>SecretResourceName references a resource under Shoot.spec.resources.<br />The secret data from this resource is used to create the source's credentials secret<br />(spec.secretRef.name) if specified in Template.</p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<hr/>
-<p><em>
-Generated with <a href="https://github.com/ahmetb/gen-crd-api-reference-docs">gen-crd-api-reference-docs</a>
-</em></p>
+
+
