@@ -1,0 +1,10 @@
+processor:
+  ignoreFields:
+  - "TypeMeta"
+
+render:
+  kubernetesVersion: "1.35"
+  knownTypes:
+  - name: Kustomization
+    package: github.com/fluxcd/kustomize-controller/api/v1
+    link: https://fluxcd.io/flux/components/kustomize/api/v1/#kustomize.toolkit.fluxcd.io/v1.Kustomization
