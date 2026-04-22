@@ -146,10 +146,10 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fluent/fluent-operator/v3 v3.7.0 h1:eBjHm9CoKtjNBqQmV3ttqlQfLOKGugATJ9MiK1lyiZo=
 github.com/fluent/fluent-operator/v3 v3.7.0/go.mod h1:gXzrUINbapW1YRVYm3m8z8pxs34kltOeC4H9RT3XPng=
-github.com/fluxcd/flux2/v2 v2.8.5 h1:f4c5fjIjSG9IHJkUt8xhgDUz/HoY0omyZc7PxLl2oqM=
-github.com/fluxcd/flux2/v2 v2.8.5/go.mod h1:l72RAFQ4srvEBVHMYEYsm9s4SC1Lk28WY9UaTDRdMRg=
-github.com/fluxcd/kustomize-controller/api v1.8.3 h1:Ux9AAOY0lkP6FgRg5/b/ITvRSy8lz6VBBaZ9bXmTLmI=
-github.com/fluxcd/kustomize-controller/api v1.8.3/go.mod h1:c/mUPIffDDLg1EicXCJtX4N/rc+z5Zh0e/CXjhd7Dyc=
+github.com/fluxcd/flux2/v2 v2.8.6 h1:ZVw0xXOmjm9BxU4f3rS3TXNzFU0OfgZofCiZhI9H5sE=
+github.com/fluxcd/flux2/v2 v2.8.6/go.mod h1:FqnpQiuQgT/1Uxhu2NhBUXZeDaSoBdN/AGVni+Z5qWI=
+github.com/fluxcd/kustomize-controller/api v1.8.4 h1:13+9CgxGj67Bn7wzFILw8S4r4urEgiLTODwjA4XU0mU=
+github.com/fluxcd/kustomize-controller/api v1.8.4/go.mod h1:c/mUPIffDDLg1EicXCJtX4N/rc+z5Zh0e/CXjhd7Dyc=
 github.com/fluxcd/pkg/apis/acl v0.9.0 h1:wBpgsKT+jcyZEcM//OmZr9RiF8klL3ebrDp2u2ThsnA=
 github.com/fluxcd/pkg/apis/acl v0.9.0/go.mod h1:TttNS+gocsGLwnvmgVi3/Yscwqrjc17+vhgYfqkfrV4=
 github.com/fluxcd/pkg/apis/kustomize v1.15.1 h1:t9QZh+3ZS8EKmlxrnnbcKZcGTrg8FDvMF1T8BHMCuqI=
@@ -160,8 +160,8 @@ github.com/fluxcd/pkg/kustomize v1.27.2 h1:rtoccQyY4SnqXY/wtAXWGEXrINT923z4RBsId
 github.com/fluxcd/pkg/kustomize v1.27.2/go.mod h1:A2RQTe9woDPiwJDWFlkoP4oF9eX9DeXr89FEkKnSObk=
 github.com/fluxcd/pkg/tar v0.17.0 h1:uNxbFXy8ly8C7fJ8D7w3rjTNJFrb4Hp1aY/30XkfvxY=
 github.com/fluxcd/pkg/tar v0.17.0/go.mod h1:b1xyIRYDD0ket4SV5u0UXYv+ZdN/O/HmIO5jZQdHQls=
-github.com/fluxcd/source-controller/api v1.8.2 h1:i0/6BeNCn+zRfX+gKh4PsFF2NBzBhwXt0wPImVlZObg=
-github.com/fluxcd/source-controller/api v1.8.2/go.mod h1:HgZ6NSH1cyOE2jRoNwln1xEwr9ETvrLeiy1o4O04vQM=
+github.com/fluxcd/source-controller/api v1.8.3 h1:WNEETjmp/YTZx5IMg9ewz2Wn8YzOVETeJJ0LIPivm40=
+github.com/fluxcd/source-controller/api v1.8.3/go.mod h1:sio4t49RDx+S1etHRFAEEw8qfVuw0KKlOg8bRVlEYPM=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
