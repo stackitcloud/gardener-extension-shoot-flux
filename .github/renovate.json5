@@ -39,6 +39,18 @@
       datasourceTemplate: 'go',
     },
     {
+      description: 'Update the default Flux version in the generated API reference docs.',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^hack/api-reference/api\\.md$/',
+      ],
+      matchStrings: [
+        'Defaults to "(?<currentValue>v[0-9.]+)"',
+      ],
+      depNameTemplate: 'github.com/fluxcd/flux2/v2',
+      datasourceTemplate: 'go',
+    },
+    {
       description: 'Update `_VERSION` and `_version` variables in Makefiles and scripts. Inspired by `regexManagers:dockerfileVersions` preset.',
       customType: 'regex',
       managerFilePatterns: [
@@ -64,9 +76,6 @@
       groupName: 'fluxcd',
       matchDatasources: [
         'go',
-      ],
-      prBodyNotes: [
-        ':warning: This PR updates an API docstring, so you have to run `make generate` locally.',
       ],
       matchPackageNames: [
         'github.com/fluxcd{/,}**',
