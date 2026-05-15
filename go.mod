@@ -6,7 +6,7 @@ require (
 	github.com/elastic/crd-ref-docs v0.3.0
 	github.com/fluxcd/flux2/v2 v2.8.6
 	github.com/fluxcd/kustomize-controller/api v1.8.4
-	github.com/fluxcd/pkg/apis/meta v1.26.0
+	github.com/fluxcd/pkg/apis/meta v1.27.0
 	github.com/fluxcd/source-controller/api v1.8.3
 	github.com/gardener/gardener v1.142.1
 	github.com/gardener/gardener/pkg/apis v1.142.1
@@ -18,7 +18,7 @@ require (
 	golang.org/x/tools v0.45.0
 	k8s.io/api v0.35.5
 	k8s.io/apiextensions-apiserver v0.35.5
-	k8s.io/apimachinery v0.35.5
+	k8s.io/apimachinery v0.36.0
 	k8s.io/client-go v0.35.5
 	k8s.io/code-generator v0.35.5
 	k8s.io/component-base v0.35.5
@@ -136,7 +136,6 @@ require (
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/nexucis/lamenv v0.5.2 // indirect
 	github.com/perses/common v0.30.2 // indirect
 	github.com/perses/perses v0.53.0 // indirect
@@ -208,7 +207,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	google.golang.org/grpc v1.80.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -224,6 +223,7 @@ require (
 	k8s.io/kubelet v0.35.4 // indirect
 	k8s.io/metrics v0.35.4 // indirect
 	k8s.io/pod-security-admission v0.35.4 // indirect
+	k8s.io/streaming v0.36.0 // indirect
 	sigs.k8s.io/controller-tools v0.20.1 // indirect
 	sigs.k8s.io/gateway-api v1.5.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
