@@ -43,7 +43,6 @@ type AdditionalResource struct {
 
 // FluxInstallation configures the Flux installation in the Shoot cluster.
 type FluxInstallation struct {
-	// renovate:flux-version
 	// renovate updates the doc string. See renovate config for more details
 
 	// Version specifies the Flux version that should be installed.
