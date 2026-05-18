@@ -19,32 +19,20 @@
   commitMessagePrefix: '🤖 ',
   customManagers: [
     {
+      description: 'Update the default Flux version in code, examples, and generated API reference docs.',
       customType: 'regex',
       managerFilePatterns: [
         '/^pkg/apis/flux/.*\\.go$/',
         '/^example/shoot\\.yaml/',
+        '/^hack/api-reference/api\\.md$/',
       ],
       matchStrings: [
         'defaultFluxVersion = "(?<currentValue>v[0-9.]+)"',
         // this matches any comment block that has 'renovate:flux-version', then
         // any number of empty or comment lines, and then a substring that
-        // matches e.g. "Defaults to "v1.0.0".
-        'renovate:flux-version\\n(?:\\s*(?:\\/\\/).*\n)*.*Defaults to "(?<currentValue>v[0-9.]+)"',
-        // this matches any comment block that has 'renovate:flux-version', then
-        // any number of empty or comment lines, and then a substring that
         // matches e.g. "version: v1.0.0".
         'renovate:flux-version\\n(?:\\s*(?:#).*\n)*.*version: (?<currentValue>v[0-9.]+)\\s',
-      ],
-      depNameTemplate: 'github.com/fluxcd/flux2/v2',
-      datasourceTemplate: 'go',
-    },
-    {
-      description: 'Update the default Flux version in the generated API reference docs.',
-      customType: 'regex',
-      managerFilePatterns: [
-        '/^hack/api-reference/api\\.md$/',
-      ],
-      matchStrings: [
+        // Matches any string that matches e.g. "Defaults to "v1.0.0".
         'Defaults to "(?<currentValue>v[0-9.]+)"',
       ],
       depNameTemplate: 'github.com/fluxcd/flux2/v2',
