@@ -161,7 +161,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Version specifies the Flux version that should be installed.<br />Defaults to "v2.8.8".</p>
+<p>Version specifies the Flux version that should be installed.<br />Defaults to "v2.9.0".</p>
 </td>
 </tr>
 <tr>
