@@ -15,6 +15,11 @@ TAG							:= $(VERSION)
 LD_FLAGS                    := -w $(shell EFFECTIVE_VERSION=$(VERSION) bash $(GARDENER_HACK_DIR)/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/go.mod $(EXTENSION_PREFIX)-$(NAME) 2>&1 | grep -v .dockerignore)
 LEADER_ELECTION             := false
 IGNORE_OPERATION_ANNOTATION := false
+# FLUX_VERSION is derived from go.mod so the test fixtures in
+# pkg/controller/extension/testdata/fluxmanifests always match the Flux library
+# that fluxinstall.Generate is compiled against.
+FLUX_VERSION                := $(shell go list -m -f '{{.Version}}' github.com/fluxcd/flux2/v2)
+FLUX_MANIFESTS_DIR          := pkg/controller/extension/testdata/fluxmanifests
 
 export CGO_ENABLED=0
 
@@ -91,8 +96,17 @@ check: $(GO_ADD_LICENSE) $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM) $(YQ)
 	@bash $(GARDENER_HACK_DIR)/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
 	@bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
 
+.PHONY: update-flux-manifests
+update-flux-manifests: ## Refresh the Flux install manifests used as test fixtures to match go.mod (github.com/fluxcd/flux2/v2).
+	@echo "Refreshing Flux test manifests in $(FLUX_MANIFESTS_DIR) to $(FLUX_VERSION)"
+	@tmp=$$(mktemp -d) && \
+		curl -sSfL https://github.com/fluxcd/flux2/releases/download/$(FLUX_VERSION)/manifests.tar.gz | tar xz -C $$tmp && \
+		rm -f $(FLUX_MANIFESTS_DIR)/*.yaml && \
+		find $$tmp -name '*.yaml' -exec cp {} $(FLUX_MANIFESTS_DIR)/ \; && \
+		rm -rf $$tmp
+
 .PHONY: generate
-generate: $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(CRD_REF_DOCS) $(HELM)
+generate: $(DEEPCOPY_GEN) $(DEFAULTER_GEN) $(CRD_REF_DOCS) $(HELM) update-flux-manifests
 	REPO_ROOT=$(REPO_ROOT) \
 	GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) \
 	bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
