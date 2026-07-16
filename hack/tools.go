@@ -9,8 +9,7 @@
 package tools
 
 import (
-	_ "github.com/elastic/crd-ref-docs"
-	_ "github.com/gardener/gardener/hack"
-	_ "golang.org/x/tools/cmd/goimports"
+	// Gardener provided build tools like crd-ref-docs, goimports, controller-gen,...
+	_ "github.com/gardener/gardener/hack/tools"
 	_ "k8s.io/code-generator"
 )
