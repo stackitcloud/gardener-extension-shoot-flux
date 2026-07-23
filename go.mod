@@ -3,8 +3,8 @@ module github.com/stackitcloud/gardener-extension-shoot-flux
 go 1.26.5
 
 require (
-	github.com/fluxcd/flux2/v2 v2.9.2
-	github.com/fluxcd/kustomize-controller/api v1.9.3
+	github.com/fluxcd/flux2/v2 v2.9.3
+	github.com/fluxcd/kustomize-controller/api v1.9.4
 	github.com/fluxcd/pkg/apis/meta v1.31.0
 	github.com/fluxcd/source-controller/api v1.9.3
 	github.com/gardener/gardener v1.147.1
@@ -70,7 +70,7 @@ require (
 	github.com/fluent/fluent-operator/v3 v3.7.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.10.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v1.19.1 // indirect
-	github.com/fluxcd/pkg/kustomize v1.35.3 // indirect
+	github.com/fluxcd/pkg/kustomize v1.35.4 // indirect
 	github.com/fluxcd/pkg/tar v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
