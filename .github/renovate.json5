@@ -68,6 +68,13 @@
       matchPackageNames: [
         'github.com/fluxcd{/,}**',
       ],
+      // regenerate the test fixtures (flux manifests)
+      postUpgradeTasks: {
+        commands: [
+          'make generate',
+        ],
+        executionMode: 'branch',
+      },
     },
     {
       description: 'automerge non-major test dependencies updates',
