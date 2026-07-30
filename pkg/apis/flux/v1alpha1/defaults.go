@@ -88,6 +88,10 @@ func SetDefaults_FluxInstallation(obj *FluxInstallation) {
 	if obj.Namespace == nil {
 		obj.Namespace = ptr.To(defaultFluxNamespace)
 	}
+
+	if obj.NetworkPolicy == nil {
+		obj.NetworkPolicy = ptr.To(true)
+	}
 }
 
 func SetDefaults_Source(obj *Source) {

@@ -212,6 +212,18 @@ string array
 <p>ComponentsExtra is a list of extra components to install<br />See https://fluxcd.io/flux/installation/configuration/optional-components/</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>networkPolicy</code></br>
+<em>
+boolean
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NetworkPolicy specifies whether Flux's default NetworkPolicies are installed in the Flux<br />namespace. Defaults to true. These policies make the namespace default-deny for ingress<br />(only intra-namespace traffic and metrics scraping are allowed), which is fine when Flux runs<br />in its own dedicated namespace. Set to false when the Flux namespace is shared with other<br />workloads that must accept ingress from outside the namespace — most importantly<br />admission-webhook servers (cert-manager, ESO, kyverno, ...), whose webhooks are called by the<br />kube-apiserver and would otherwise be blocked by the default-deny ingress policy.</p>
+</td>
+</tr>
 
 </tbody>
 </table>

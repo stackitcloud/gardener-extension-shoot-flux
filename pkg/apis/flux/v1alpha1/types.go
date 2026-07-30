@@ -68,6 +68,16 @@ type FluxInstallation struct {
 	// See https://fluxcd.io/flux/installation/configuration/optional-components/
 	// +optional
 	ComponentsExtra []string `json:"componentsExtra,omitempty"`
+
+	// NetworkPolicy specifies whether Flux's default NetworkPolicies are installed in the Flux
+	// namespace. Defaults to true. These policies make the namespace default-deny for ingress
+	// (only intra-namespace traffic and metrics scraping are allowed), which is fine when Flux runs
+	// in its own dedicated namespace. Set to false when the Flux namespace is shared with other
+	// workloads that must accept ingress from outside the namespace — most importantly
+	// admission-webhook servers (cert-manager, ESO, kyverno, ...), whose webhooks are called by the
+	// kube-apiserver and would otherwise be blocked by the default-deny ingress policy.
+	// +optional
+	NetworkPolicy *bool `json:"networkPolicy,omitempty"`
 }
 
 // Source configures how to bootstrap a Flux source object.
