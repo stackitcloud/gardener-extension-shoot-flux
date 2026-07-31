@@ -325,6 +325,9 @@ func buildFluxInstallOptions(config *fluxv1alpha1.FluxInstallation) fluxinstall.
 		options.Components = config.Components
 	}
 	options.Components = append(options.Components, config.ComponentsExtra...)
+	if config.NetworkPolicy != nil {
+		options.NetworkPolicy = *config.NetworkPolicy
+	}
 	return options
 }
 

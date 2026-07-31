@@ -109,6 +109,11 @@ func (in *FluxInstallation) DeepCopyInto(out *FluxInstallation) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.NetworkPolicy != nil {
+		in, out := &in.NetworkPolicy, &out.NetworkPolicy
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
