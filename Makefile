@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ENSURE_GARDENER_MOD         := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+# Extract the tool modules that hack/tools.mk (GARDENER_TOOL_DIR) and hack/update-codegen.sh (CODE_GEN_DIR)
+# use via `go list -m {{.Dir}}`, otherwise the scripts break on cold cache.
+ENSURE_TOOL_MODS            := $(shell go mod download github.com/gardener/gardener/hack/tools k8s.io/code-generator)
 GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 
 EXTENSION_PREFIX            := gardener-extension
