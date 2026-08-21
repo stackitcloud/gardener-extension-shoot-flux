@@ -7,20 +7,20 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.9.4
 	github.com/fluxcd/pkg/apis/meta v1.31.0
 	github.com/fluxcd/source-controller/api v1.9.4
-	github.com/gardener/gardener v1.149.1
-	github.com/gardener/gardener/hack/tools v1.149.1
-	github.com/gardener/gardener/pkg/apis v1.149.1
+	github.com/gardener/gardener v1.149.3
+	github.com/gardener/gardener/hack/tools v1.149.3
+	github.com/gardener/gardener/pkg/apis v1.149.3
 	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	k8s.io/api v0.36.3
-	k8s.io/apiextensions-apiserver v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/client-go v0.36.3
-	k8s.io/code-generator v0.36.3
-	k8s.io/component-base v0.36.3
+	k8s.io/api v0.36.4
+	k8s.io/apiextensions-apiserver v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/client-go v0.36.4
+	k8s.io/code-generator v0.36.4
+	k8s.io/component-base v0.36.4
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.24.1
 )
@@ -233,7 +233,7 @@ require (
 	k8s.io/kubelet v0.36.3 // indirect
 	k8s.io/metrics v0.36.3 // indirect
 	k8s.io/pod-security-admission v0.36.3 // indirect
-	k8s.io/streaming v0.36.3 // indirect
+	k8s.io/streaming v0.36.4 // indirect
 	sigs.k8s.io/gateway-api v1.6.1 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect
