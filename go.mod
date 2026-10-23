@@ -1,11 +1,11 @@
 module github.com/stackitcloud/gardener-extension-shoot-flux
 
-go 1.26.8
+go 1.27.0
 
 require (
 	github.com/fluxcd/flux2/v2 v2.9.6
 	github.com/fluxcd/kustomize-controller/api v1.9.6
-	github.com/fluxcd/pkg/apis/meta v1.31.0
+	github.com/fluxcd/pkg/apis/meta v1.37.0
 	github.com/fluxcd/source-controller/api v1.9.6
 	github.com/gardener/gardener v1.154.0
 	github.com/gardener/gardener/hack/tools v1.154.0
