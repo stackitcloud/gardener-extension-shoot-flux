@@ -4,9 +4,9 @@ go 1.27.0
 
 require (
 	github.com/fluxcd/flux2/v2 v2.9.6
-	github.com/fluxcd/kustomize-controller/api v1.9.6
-	github.com/fluxcd/pkg/apis/meta v1.37.0
-	github.com/fluxcd/source-controller/api v1.9.6
+	github.com/fluxcd/kustomize-controller/api v1.10.0
+	github.com/fluxcd/pkg/apis/meta v1.38.0
+	github.com/fluxcd/source-controller/api v1.10.0
 	github.com/gardener/gardener v1.154.0
 	github.com/gardener/gardener/hack/tools v1.154.0
 	github.com/gardener/gardener/pkg/apis v1.154.0
@@ -74,8 +74,8 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fluent/fluent-operator/v3 v3.7.0 // indirect
-	github.com/fluxcd/pkg/apis/acl v0.10.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.19.2 // indirect
+	github.com/fluxcd/pkg/apis/acl v0.12.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.23.0 // indirect
 	github.com/fluxcd/pkg/kustomize v1.35.7 // indirect
 	github.com/fluxcd/pkg/tar v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect

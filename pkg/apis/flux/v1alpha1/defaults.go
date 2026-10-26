@@ -169,8 +169,8 @@ func SetDefaults_Flux_OCIRepository(obj *sourcev1.OCIRepository) {
 		obj.Namespace = defaultFluxNamespace
 	}
 
-	if obj.Spec.Interval.Duration == 0 {
-		obj.Spec.Interval = metav1.Duration{Duration: time.Minute}
+	if obj.Spec.Interval == nil {
+		obj.Spec.Interval = &metav1.Duration{Duration: time.Minute}
 	}
 }
 
