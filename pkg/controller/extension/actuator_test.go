@@ -545,9 +545,7 @@ func fakeFluxReady(ctx context.Context, c client.Client, namespace string) func(
 func setupManifests() string {
 	tmpDir, err := manifestgen.MkdirTempAbs("", "gardener-extension-shoot-flux")
 	Expect(err).NotTo(HaveOccurred())
-	DeferCleanup(func() {
-		os.RemoveAll(tmpDir)
-	})
+	DeferCleanup(os.RemoveAll, tmpDir)
 	srcDir := "./testdata/fluxmanifests"
 	files, err := os.ReadDir(srcDir)
 	Expect(err).NotTo(HaveOccurred())
@@ -561,13 +559,13 @@ func setupManifests() string {
 }
 
 func copyFile(src, dst string) error {
-	source, err := os.Open(src)
+	source, err := os.Open(filepath.Clean(src))
 	if err != nil {
 		return err
 	}
 	defer source.Close()
 
-	destination, err := os.Create(dst)
+	destination, err := os.Create(filepath.Clean(dst))
 	if err != nil {
 		return err
 	}
