@@ -4,9 +4,9 @@ go 1.27.0
 
 require (
 	github.com/fluxcd/flux2/v2 v2.9.6
-	github.com/fluxcd/kustomize-controller/api v1.10.0
+	github.com/fluxcd/kustomize-controller/api v1.10.1
 	github.com/fluxcd/pkg/apis/meta v1.38.0
-	github.com/fluxcd/source-controller/api v1.10.0
+	github.com/fluxcd/source-controller/api v1.10.1
 	github.com/gardener/gardener v1.154.0
 	github.com/gardener/gardener/hack/tools v1.154.0
 	github.com/gardener/gardener/pkg/apis v1.154.0
