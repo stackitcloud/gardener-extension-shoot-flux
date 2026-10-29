@@ -105,9 +105,9 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - ""
+  - authorization.k8s.io
   resources:
-  - serviceaccounts/token
+  - subjectaccessreviews
   verbs:
   - create
 - nonResourceURLs:
