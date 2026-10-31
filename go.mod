@@ -7,9 +7,9 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.10.1
 	github.com/fluxcd/pkg/apis/meta v1.38.0
 	github.com/fluxcd/source-controller/api v1.10.1
-	github.com/gardener/gardener v1.154.0
-	github.com/gardener/gardener/hack/tools v1.154.0
-	github.com/gardener/gardener/pkg/apis v1.154.0
+	github.com/gardener/gardener v1.154.1
+	github.com/gardener/gardener/hack/tools v1.154.1
+	github.com/gardener/gardener/pkg/apis v1.154.1
 	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
@@ -81,8 +81,8 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
 	github.com/gardener/cert-management v0.23.0 // indirect
-	github.com/gardener/etcd-druid/api v0.39.0 // indirect
-	github.com/gardener/machine-controller-manager v0.63.0 // indirect
+	github.com/gardener/etcd-druid/api v0.39.1 // indirect
+	github.com/gardener/machine-controller-manager v0.63.1 // indirect
 	github.com/gardener/pvc-autoscaler v0.3.1 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
