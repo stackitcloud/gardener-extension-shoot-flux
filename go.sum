@@ -163,8 +163,8 @@ github.com/felixge/httpsnoop v1.1.0 h1:3YtUj32ZZkqZtt3sZZsClsymw/QDuVfpNhoA31zeO
 github.com/felixge/httpsnoop v1.1.0/go.mod h1:Zqxgdd+1Rkcz8euOqdr7lqgCRJztwr5hp9vDSi5UZCE=
 github.com/fluent/fluent-operator/v3 v3.7.0 h1:eBjHm9CoKtjNBqQmV3ttqlQfLOKGugATJ9MiK1lyiZo=
 github.com/fluent/fluent-operator/v3 v3.7.0/go.mod h1:gXzrUINbapW1YRVYm3m8z8pxs34kltOeC4H9RT3XPng=
-github.com/fluxcd/flux2/v2 v2.10.0 h1:gvs1UO55jG6veBEQ8lY6mUo+4dO074D9IqLi2Yel0SI=
-github.com/fluxcd/flux2/v2 v2.10.0/go.mod h1:I6L0dNsoqfivvsdfO8huHm62G+z4IRljggjMBcAuqnE=
+github.com/fluxcd/flux2/v2 v2.10.1 h1:0lNYpqRE/rVcUjuJLalyWwp2xjXIcZm8P7zSu+J2PDQ=
+github.com/fluxcd/flux2/v2 v2.10.1/go.mod h1:Bf/zLmCc5AC+lc+fNdYegkk9c7jvS9mxCQDCmtFbC+c=
 github.com/fluxcd/kustomize-controller/api v1.10.2 h1:tj4mU/3uUBzVxxx4zi95fxs8x2BhEUQkFNOKNRrxn08=
 github.com/fluxcd/kustomize-controller/api v1.10.2/go.mod h1:hSq1/80SS0106LhfGr2fe/+P8MgCfBQ82EocC6Su/Ms=
 github.com/fluxcd/pkg/apis/acl v0.12.0 h1:UWpZDqKxpKDW38wdXIMHV8Uv3POPu2vUrra0JH1frH0=
